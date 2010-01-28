@@ -1,0 +1,17 @@
+:: ReadSlam ::
+
+ReadSlam is a pipeline for handling data from Solexa deep sequencing.
+
+- parsing    : convert from a different format into .slam format
+- prefilter  : drop bad reads and trim adapters from the 3' end of reads
+- map        : align reads to a reference genome
+- collapse   : drop clonal reads (the best is kept)
+- stack      : generate coverage stacks for the reference genome
+- postfilter : drop reads that failed bisulfite conversion & trim 3' ends
+- call       : make base calls based on stacks
+
+:: Installation :: 
+
+ReadSlam is designed only for 64-bit Linux systems
+
+Just type 'make' and the binaries will be in the readslam/bin directory.
