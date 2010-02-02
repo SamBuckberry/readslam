@@ -1,17 +1,41 @@
-:: ReadSlam ::
+*** OVERVIEW ****
+	ReadSlam is a pipeline for handling bisulfite-converted reads that have 
+	been sequenced by a Solexa Genome Analyzer. ReadSlam is designed to run on 
+	64-bit Linux systems. Pipeline components include:
 
-ReadSlam is a pipeline for handling data from Solexa deep sequencing.
+	- parse      : convert from a different format into .slam format
+	- prefilter  : drop bad reads and trim adapters from the 3' end of reads 
+	- map        : align reads to a reference genome
+	- collapse   : drop clonal reads (the best is kept)
+	- stack      : generate coverage stacks for the reference genome
+	- postfilter : drop reads that failed bisulfite conversion & trim 3' ends
+	- call       : make base calls based on stacks
+	
+	Several other tools are included for performing various file manipulation 	
+	functions. A PHP controller script may also have been included with this
+	distribution.
 
-- parsing    : convert from a different format into .slam format
-- prefilter  : drop bad reads and trim adapters from the 3' end of reads
-- map        : align reads to a reference genome
-- collapse   : drop clonal reads (the best is kept)
-- stack      : generate coverage stacks for the reference genome
-- postfilter : drop reads that failed bisulfite conversion & trim 3' ends
-- call       : make base calls based on stacks
+**** LICENSE ****
+	ReadSlam by Julian Tonti-Filippini is licensed under a Creative Commons 														
+	Attribution 3.0 Unported License
 
-:: Installation :: 
+	License overview: http://creativecommons.org/licenses/by/3.0/
+	Full legal code: http://creativecommons.org/licenses/by/3.0/legalcode
 
-ReadSlam is designed only for 64-bit Linux systems
+**** CONTACT ****
+	Julian Tonti-Filippini
+	University of Western Australia
+	julian.tonti@gmail.com
 
-Just type 'make' and the binaries will be in the readslam/bin directory.
+**** INSTALLATION ****
+	1. cd /path/to/slam
+	2. make all
+	3. ./bin/slam help
+
+	All binaries are placed in the slam/bin directory.
+	To uninstall just delete the slam directory.
+	
+**** USAGE ****
+	Run any binary without parameters for basic usage instructions.
+	Online documentation is available at http://revjs.org/slam
+	
