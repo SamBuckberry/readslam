@@ -1,10 +1,10 @@
 #ifndef _READSLAM_POST
 #define _READSLAM_POST
 
-#include "_common.h"
-#include "_fastq.h"
-#include "_bowtie.h"
-#include "_read.h"
+#include "../common/_common.h"
+#include "../parsing/_fastq.h"
+#include "../parsing/_bowtie.h"
+#include "../core/_read.h"
 #include <map>
 
 /**
@@ -18,8 +18,8 @@ namespace ReadSlam
 	    map<string, string> original;
 		map<string, Read> reads;
 		
-		ReadSlam::FastQ fq;
-		ReadSlam::Bowtie bt;
+		ReadSlam::ReadFastQ fq;
+		ReadSlam::ReadBowtie bt;
 		
 		//counters
 		int total;
@@ -88,7 +88,7 @@ namespace ReadSlam
 					continue;
 				}
 				Read read;
-				bt.to_read(read);
+				bt.to_slam(read);
 				
 				map<string,Read>::iterator it = reads.find(bt.name);
 				

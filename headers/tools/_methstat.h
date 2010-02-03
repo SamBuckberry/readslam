@@ -5,7 +5,6 @@
 #include "../tools/_fasta.h"
 #include "../tools/_fasta.h"
 #include "../parsing/_slam.h"
-#include <boost/regex.hpp>
 
 //Takes a reference genome and a file of mc sites and makes all C lower case in the ref genome where meth (lower G for - strand)
 namespace ReadSlam
