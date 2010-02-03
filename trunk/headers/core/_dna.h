@@ -102,7 +102,8 @@ namespace DNA
 		if (seed > 15)
 		{
 			cerr << "Seed size cannot exceed 15" << endl;
-			exit(1);
+			return;
+			//FIXME: should make a hard exit here. exit(1);
 		}
 		int base = 4;
 		int mask = (int)(pow((double)base,(double)seed) - 1);
