@@ -1,7 +1,3 @@
-old:
-	#g++ -O3 -lpthread -o ./map_se ./src/mapperSE.cpp
-	#g++ -O3 -lpthread -o ./bin/readslam ./headers/main/cli.cpp
-
 all:
 	@echo "READSLAM: Compilation started"
 	g++ -O3 -o ./bin/preprocess ./headers/main/preprocess.cpp
@@ -26,3 +22,7 @@ all:
 	g++ -O3 -o ./bin/methstat ./headers/main/methstat.cpp
 	g++ -O3 -o ./bin/smrna ./headers/main/smrna.cpp
 	@echo "READSLAM: Compilation finished"
+	
+old:
+	#g++ -O3 -lpthread -o ./map_se ./src/mapperSE.cpp
+	#g++ -O3 -lpthread -o ./bin/readslam ./headers/main/cli.cpp
