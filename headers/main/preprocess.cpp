@@ -2,10 +2,10 @@
 
 int main (int argc, char * const argv[])
 {
-	if (argc != 3)
+	if (argc != 4)
 	{
 		cout << "Usage: ./preprocess adapter infile outfile" << endl;
-		cout << "Usage: ./preprocess AGATCGGAAGAGCTCGTATGC /tmp/reads.fastq /tmp/trimmed.fastq" << endl;
+		cout << "Example: ./preprocess AGATCGGAAGAGCTCGTATGC /tmp/reads.fastq /tmp/trimmed.fastq" << endl;
 		exit(0);
 	}
 	ReadSlam::PreProcessor processor;
