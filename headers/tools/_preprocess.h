@@ -95,7 +95,7 @@ namespace ReadSlam
 				for (int j=0; j<size_adapter; ++j)
 				{
 					if (i+j >= size_read) break;
-					if (read[i+j] != adapter[j]) { match = false; break; }
+					if (f.sequence[i+j] != adapter[j]) { match = false; break; }
 				}
 				if (match)
 				{
