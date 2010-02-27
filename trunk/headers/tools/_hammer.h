@@ -148,14 +148,14 @@ namespace ReadSlam
 			{
 				probs[N].resize(limit);
 				
-				cout << N;
+				//cout << N;
 			
 				for (int n=0; n<limit; ++n)
 				{
 					probs[N][n] = probability(n,N,error);
-					printf("\t%1.4f", probs[N][n]);
+					//printf("\t%1.4f", probs[N][n]);
 				}
-				cout << endl;
+				//cout << endl;
 			}
 		}
 	
