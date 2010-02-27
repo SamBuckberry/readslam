@@ -1,5 +1,4 @@
-#ifndef _ReadSlam_PreProcess
-#define _ReadSlam_PreProcess
+#pragma once
 
 #include "../common/_common.h"
 #include "../parsing/_fastq.h"
@@ -16,15 +15,17 @@ namespace ReadSlam
 		int count;
 		int trimmed_adapter;
 		int trimmed_quality;
+		string adapter;
 		
 		//Trim reads in a FastQ input file, writing to a FastQ output file
-		void trim(string infile, string outfile)
+		void trim(string adapter, string infile, string outfile)
 		{
 			before = 0;
 			after = 0;
 			count = 0;
 			trimmed_adapter = 0;
 			trimmed_quality = 0;
+			this->adapter = adapter;
 			
 			ifstream in;
 			in.open(infile.c_str());
@@ -82,20 +83,41 @@ namespace ReadSlam
 		//Trim adapter sequence from the end of the read
 		void trim_on_adapter(ReadFastQ& f)
 		{
-			string adapter = "AGATCGGAAGAGCTCGTATGC";
+			//string adapter = "AGATCGGAAGAGCTCGTATGC";
 			
-			for (int i=adapter.size(), len=f.sequence.size(); i > 2; --i)
+			int size_adapter = adapter.size();
+			int size_read = f.sequence.size();
+
+			for (int i=0; i<size_read - 3; ++i)
 			{
-				if (i > len) i = len;
+				bool match = true;
 				
-				if (f.sequence.substr(len-i, i) == adapter.substr(0,i))
+				for (int j=0; j<size_adapter; ++j)
 				{
-					f.sequence = f.sequence.substr(0, len-i);
-					f.qualities = f.qualities.substr(0, len-i);
+					if (i+j >= size_read) break;
+					if (read[i+j] != adapter[j]) { match = false; break; }
+				}
+				if (match)
+				{
+					f.sequence = f.sequence.substr(0, i);
+					f.qualities = f.qualities.substr(0, i);
 					trimmed_adapter++;
-					return;
+					break;
 				}
 			}
+			
+			// for (int i=adapter.size(), len=f.sequence.size(); i > 2; --i)
+			// {
+			// 	if (i > len) i = len;
+			// 	
+			// 	if (f.sequence.substr(len-i, i) == adapter.substr(0,i))
+			// 	{
+			// 		f.sequence = f.sequence.substr(0, len-i);
+			// 		f.qualities = f.qualities.substr(0, len-i);
+			// 		trimmed_adapter++;
+			// 		return;
+			// 	}
+			// }
 		}
 		
 		//Convert cytosines in the read into thymines
@@ -111,5 +133,3 @@ namespace ReadSlam
 		}
 	};
 }
-
-#endif
