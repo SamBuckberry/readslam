@@ -296,19 +296,19 @@ namespace ReadSlam
 				
 				if (s->fref == 'C')
 				{
-					if (get_context(ref, i, true) == context)
-					{
+					//if (get_context(ref, i, true) == context)
+					//{
 						n += s->ftotal;
 						c += s->fc;
-					}
+					//}
 				}
 				else if (s->rref == 'C')
 				{
-					if (get_context(ref, i, false) == context)
-					{
+					//if (get_context(ref, i, false) == context)
+					//{
 						n += s->rtotal;
 						c += s->rc;
-					}
+					//}
 				}
 				else
 				{
@@ -359,7 +359,7 @@ namespace ReadSlam
 			contexts.push_back("CHH");
 			
 			cout << "Conversion failure: " << flush;
-			double error = get_error(ref,context);
+			double error = get_error(ref, "");
 			cout << error << endl;
 
 			for (int i=0; i<contexts.size(); ++i)
