@@ -32,8 +32,7 @@ namespace ReadSlam
 		//For sorting the pval table by counts
 		static bool compare(const pval &a, const pval &b)
 		{
-			return a.
-			 < b.count;
+			return a.count < b.count;
 		}
 		
 		//Dump the probability table to screen
