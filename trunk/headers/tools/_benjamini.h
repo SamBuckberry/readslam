@@ -52,15 +52,28 @@ namespace ReadSlam
 		{
 			vector<pval> temp;
 			temp.resize(pvals.size());
+			pval blank;
+			blank.n = 0;
+			blank.N = 0;
+			blank.value = 0;
+			blank.count = 0;
 
 			//Sort the pvalues by count (rank)
 			sort(pvals.begin(), pvals.end(), compare);
 			
 			//Loop through and adjust the values
-			for (int i=0; i<pvals.size(); ++i)
+			for (int i=0, rank=0; i<pvals.size(); ++i)
 			{
-				pvals[i].value = pvals[i].value * pvals[i].count / i;
-				temp[(pvals[i].n * LIMIT) + pvals[i].N] = pvals[i];
+				if (pvals[i].n > 0 && pvals[i].n <= pvals[i].N)
+				{
+					++rank;
+					pvals[i].value = pvals[i].value * pvals[i].count / rank;
+					temp[(pvals[i].n * LIMIT) + pvals[i].N] = pvals[i];
+				}
+				else
+				{
+					temp[(pvals[i].n * LIMIT) + pvals[i].N] = blank;
+				}
 			}
 			pvals = temp;
 		}
@@ -110,14 +123,14 @@ namespace ReadSlam
 				{
 					s = &(stacker.stacks_itr->second.stacks[i]);
 				
-					if (s->fref == 'C')
+					if (s->fref == 'C' && s->fc > 0)
 					{
 						if (get_context(stacker.stacks_itr->first, i, true) == context)
 						{
 							s->fcall = sig(s->fc, s->ftotal) ? 'C' : (s->fcall == 'C' ? 'N' : s->fcall);
 						}
 					}
-					else if (s->rref == 'C')
+					else if (s->rref == 'C' && s->rc > 0)
 					{
 						if (get_context(stacker.stacks_itr->first, i, false) == context)
 						{
@@ -180,7 +193,7 @@ namespace ReadSlam
 					{ 
 						n = (LIMIT*n)/N;
 						N = LIMIT;
-					}
+					}					
 					pvals[(n*LIMIT)+N].count++;
 				}
 			}
