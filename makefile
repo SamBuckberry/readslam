@@ -4,6 +4,7 @@ all:
 	g++ -O3 -o ./bin/postprocess ./headers/main/postprocess.cpp
 	g++ -O3 -o ./bin/mapper ./headers/main/map.cpp
 	g++ -O3 -o ./bin/final2slam ./headers/main/final2slam.cpp
+	g++ -O3 -o ./bin/sort_name ./headers/main/sort_name.cpp
 	g++ -O3 -o ./bin/sort_sequence ./headers/main/sort_sequence.cpp
 	g++ -O3 -o ./bin/sort_location ./headers/main/sort_location.cpp
 	g++ -O3 -o ./bin/sort_clonal ./headers/main/sort_clonal.cpp
