@@ -42,9 +42,8 @@ namespace ReadSlam
 			{
 				for (int j=0; j<LIMIT; ++j)
 				{
-					printf("%1.3f ", pvals[i*LIMIT+j]);
+					cout << n " " << N << " " << pvals[i*LIMIT+j] << endl;
 				}
-				cout << endl;
 			}
 		}
 		
