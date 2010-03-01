@@ -32,7 +32,7 @@ namespace ReadSlam
 		//For sorting the pval table by counts
 		static bool compare(const pval &a, const pval &b)
 		{
-			return a.count < b.count;
+			return a.value < b.value;
 		}
 		
 		//Dump the probability table to screen
@@ -52,27 +52,48 @@ namespace ReadSlam
 		{
 			vector<pval> temp;
 			temp.resize(pvals.size());
-			pval blank;
-			blank.n = 0;
-			blank.N = 0;
-			blank.value = 0;
-			blank.count = 0;
 
-			//Sort the pvalues by count (rank)
+			//Rank the pvalues lowest to highest
 			sort(pvals.begin(), pvals.end(), compare);
 			
-			//Loop through and adjust the values
-			for (int i=0, rank=0; i<pvals.size(); ++i)
+			//Determine total count
+			unsigned long total = 0;
+			
+			for (int i=0; i<pvals.size(); ++i)
 			{
 				if (pvals[i].n > 0 && pvals[i].n <= pvals[i].N)
 				{
-					++rank;
-					pvals[i].value = pvals[i].value * pvals[i].count / rank;
-					temp[(pvals[i].n * LIMIT) + pvals[i].N] = pvals[i];
+					total += pvals[i].count;
+				}
+			}
+			
+			//Adjust each pval. The rank for blocks is taken to be the midpoint
+			unsigned long blockstart = 0;
+			
+			for (int i=0; i<pvals.size(); ++i)
+			{
+				int oldpos = (pvals[i].n * LIMIT) + pvals[i].N;
+				
+				if (pvals[i].n > 0 && pvals[i].n <= pvals[i].N)
+				{
+					//Set rank to be the midpoint of the block
+					int rank = (blockstart + pvals[i].count) / 2;
+
+					//Copy back into the original position
+					temp[oldpos] = pvals[i];
+					
+					//Adjust the pvalue
+					temp[oldpos].value = pvals[i].value * total / rank;
+
+					//Advance to the next blockstart
+					blockstart += pvals[i].count;
 				}
 				else
 				{
-					temp[(pvals[i].n * LIMIT) + pvals[i].N] = blank;
+					temp[oldpos].n = 0;
+					temp[oldpos].N = 0;
+					temp[oldpos].count = 0;
+					temp[oldpos].value = 0;
 				}
 			}
 			pvals = temp;
