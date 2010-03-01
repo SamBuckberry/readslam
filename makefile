@@ -18,7 +18,7 @@ all:
 	g++ -O3 -o ./bin/lookup ./headers/tools/_lookup.cpp
 	g++ -O3 -o ./bin/trim ./headers/main/trim.cpp
 	g++ -O3 -o ./bin/hammer ./headers/main/hammer.cpp
-	g++ -O3 -o ./bin/hammer ./headers/main/benjamini.cpp
+	g++ -O3 -o ./bin/benjamini ./headers/main/benjamini.cpp
 	g++ -O3 -o ./bin/mc ./headers/main/mc.cpp
 	g++ -O3 -o ./bin/methstat ./headers/main/methstat.cpp
 	g++ -O3 -o ./bin/smrna ./headers/main/smrna.cpp
@@ -29,7 +29,7 @@ old:
 	#g++ -O3 -lpthread -o ./bin/readslam ./headers/main/cli.cpp
 	
 test:
-	g++ -O3 -o ./bin/hammer ./headers/main/benjamini.cpp
+	g++ -O3 -o ./bin/benjamini ./headers/main/benjamini.cpp
 	#g++ -O3 -o ./bin/bw_encode ./headers/main/bw_encode.cpp
 	#g++ -O3 -o ./bin/bw_decode ./headers/main/bw_decode.cpp
 	
