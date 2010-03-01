@@ -233,7 +233,7 @@ namespace ReadSlam
 		//Build a table of probabilities using the binomial distribution. 1/1,1/2,1/3,2/1,2/2/2/3 (n/N)
 		void build_prob_table(double error)
 		{
-			cout << "Building prob table" << endl;
+			cout << "Building prob table with error: " << error << endl;
 			
 			pvals.clear();
 			pvals.resize(LIMIT * LIMIT);
