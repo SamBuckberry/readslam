@@ -358,14 +358,18 @@ namespace ReadSlam
 			contexts.push_back("CHG");
 			contexts.push_back("CHH");
 			
+			cout << "Conversion failure: " << flush;
+			double error = get_error(ref,context);
+			cout << error << endl;
+
 			for (int i=0; i<contexts.size(); ++i)
 			{
 				string context = contexts[i];
 				
 				cout << "Processing context: " << context << endl;
-				cout << " - calculating error: " << flush;
-				double error = get_error(ref,context);
-				cout << ref << " " << context << " " << error << endl;
+				// cout << " - calculating error: " << flush;
+				// double error = get_error(ref,context);
+				// cout << ref << " " << context << " " << error << endl;
 
 				cout << " - building p-table: " << flush;
 				build_prob_table(error);
@@ -375,7 +379,7 @@ namespace ReadSlam
 				count(ref,context);
 				cout << "done" << endl;
 				
-				dump();
+				//dump();
 				cout << " - adjusting cutoffs" << flush;
 				adjust();
 				cout << "done" << endl;
