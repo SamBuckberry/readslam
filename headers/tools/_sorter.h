@@ -9,6 +9,12 @@ namespace ReadSlam
 	//Static code for sorting structures or files of .slam reads
 	struct Sorter
 	{
+		//Comparator for sorting on read name (id)
+		static bool compare_name(const BasicRead a, const BasicRead b)
+		{
+			return a.name < b.name;
+		}
+
 		//Comparator for sorting on sequence
 		static bool compare_sequence(const BasicRead a, const BasicRead b)
 		{
@@ -199,6 +205,10 @@ namespace ReadSlam
 			else if (type == "clonal")
 			{
 				sort_file(infile, outfile, chunksize, compare_clone);
+			}
+			else if (type == "name")
+			{
+				sort_file(infile, outfile, chunksize, compare_name);
 			}
 			else
 			{
