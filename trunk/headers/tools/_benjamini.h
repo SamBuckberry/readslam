@@ -8,7 +8,8 @@ Make methyl-cytosine calls using the Benjamini-Hochberg false discovery rate cor
 technique. This works by calculating a table of p-values, then looping through the data
 and counting the occurence of each p-value. These are then sorted by frequency, which is
 assumed to be a normal distribution and based on the distribution, values are then 
-adjusted. Finally, actual calls are made against the adjusted values.
+
+ed. Finally, actual calls are made against the adjusted values.
 */
 namespace ReadSlam
 {
@@ -31,7 +32,8 @@ namespace ReadSlam
 		//For sorting the pval table by counts
 		static bool compare(const pval &a, const pval &b)
 		{
-			return a.count < b.count;
+			return a.
+			 < b.count;
 		}
 		
 		//Dump the probability table to screen
@@ -251,7 +253,6 @@ namespace ReadSlam
 					pvals[(n*LIMIT) + N] = p;
 				}
 			}
-			dump();
 		}
 		
 		//Using a non-converted reference assembly, calculate the error rate in a specific mC context
@@ -267,8 +268,8 @@ namespace ReadSlam
 		
 			Stack* s;
 
-			unsigned long n = 0;
-			unsigned long c = 0;
+			long n = 0;
+			long c = 0;
 			
 			for (int i=0, len=stacker.stacks[ref].length; i<len; ++i)
 			{
@@ -345,7 +346,7 @@ namespace ReadSlam
 				cout << "Processing context: " << context << endl;
 				cout << " - calculating error: " << flush;
 				double error = get_error(ref,context);
-				cout << error << endl;
+				cout << ref << " " << context << " " << error << endl;
 
 				cout << " - building p-table: " << flush;
 				build_prob_table(error);
@@ -354,6 +355,12 @@ namespace ReadSlam
 				cout << " - counting groups: " << flush;
 				count(ref,context);
 				cout << "done" << endl;
+				
+				dump();
+				cout << " - adjusting cutoffs" << flush;
+				adjust();
+				cout << "done" << endl;
+				dump();
 
 				cout << " - making calls: " << flush;
 				call(ref,context);
