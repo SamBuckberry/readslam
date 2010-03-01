@@ -42,7 +42,7 @@ namespace ReadSlam
 			{
 				for (int j=0; j<LIMIT; ++j)
 				{
-					cout << i << " " << j << " " << pvals[i*LIMIT+j].value << endl;
+					if (i <= j) cout << i << " " << j << " " << pvals[i*LIMIT+j].value << endl;
 				}
 			}
 		}
