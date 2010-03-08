@@ -1,8 +1,8 @@
-#ifndef _READSLAM_FASTA
-#define _READSLAM_FASTA
+#pragma once
 
 #include "../common/_common.h"
 #include "../core/_dna.h"
+#include "../algorithms/sorting.h"
 #include <map>
 
 /**
@@ -329,7 +329,41 @@ namespace ReadSlam
 					cout << it->first << ": " << it->second << endl;
 				}
 			}
+			
+			//Encode sequences using the Burrows-Wheeler transformation
+			void bw_encode(string infile, string outfile)
+			{
+				load(infile);
+				vector<int> blocks;
+				BlockSort sorter;
+				string encoded;
+				
+				for (int i=0; i<assemblies.size(); ++i)
+				{
+					int len = assemblies[i].length;
+					
+					blocks.clear();
+					encoded.clear();
+
+					blocks.resize(len);
+					encoded.resize(len);
+
+					sorter.sort(assemblies[i].sequence, blocks);
+					
+					int start = 0;
+					
+					for (int j=0; j<len; ++j)
+					{
+						if (blocks[j] == 0) start = j;
+						encoded[j] = assemblies[i].sequence[blocks[j]];
+					}
+					stringstream header;
+					header << start << "\t" << assemblies[i].name;
+					assemblies[i].name = header.str();
+					assemblies[i].sequence = encoded;
+				}
+				save(outfile,true);
+			}
 		};
 	}
 }
-#endif
