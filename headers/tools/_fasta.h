@@ -356,8 +356,14 @@ namespace ReadSlam
 					
 					for (int j=0; j<len; ++j)
 					{
-						if (blocks[j] == 0) start = j;
-						encoded[j] = assemblies[i].sequence[blocks[j]];
+						int pos = blocks[j] - 1;
+						
+						if (pos == -1)
+						{
+							start = j;
+							pos = len - 1;
+						}	
+						encoded[j] = assemblies[i].sequence[pos];
 					}
 					stringstream header;
 					header << start << "\t" << assemblies[i].name;
