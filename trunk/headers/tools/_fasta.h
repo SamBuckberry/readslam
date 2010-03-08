@@ -340,6 +340,8 @@ namespace ReadSlam
 				
 				for (int i=0; i<assemblies.size(); ++i)
 				{
+					cout << "Encoding assembly: " << assemblies[i].name << endl;
+					
 					int len = assemblies[i].length;
 					
 					blocks.clear();
