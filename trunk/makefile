@@ -33,7 +33,11 @@ test:
 	g++ -O3 -o ./bin/benjamini ./headers/main/benjamini.cpp
 	g++ -O3 -o ./bin/bw_encode ./headers/main/bw_encode.cpp
 	#g++ -O3 -o ./bin/bw_decode ./headers/main/bw_decode.cpp
-	
+
+coder:
+	g++ -O3 -o ./bin/encoder ./headers/algorithms/encode.cpp
+	g++ -O3 -o ./bin/decoder ./headers/algorithms/decode.cpp
+	g++ -O3 -o ./bin/fasta ./headers/main/fasta.cpp	
 	
 todo:
 	@#g++ -O3 -o ./bin/preprocess ./headers/main/preprocess.cpp

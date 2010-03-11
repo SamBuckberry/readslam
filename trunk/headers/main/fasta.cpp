@@ -67,6 +67,10 @@ void help()
 	<<"\n- Diagnosis"
 	<<"\n    ./fasta diagnose ./file.fasta"
 	<<"\n"
+	<<"\n- Other"
+	<<"\n    ./fasta encode ./file.fasta"
+	<<"\n    ./fasta decode ./file.fasta"
+	<<"\n"
 	<<"\n--------------------------------------------------------------------------------"
 	<<"\n"
 	<<"\n:: More Information ::"
@@ -132,6 +136,18 @@ int main (int argc, char* const argv[])
 	{
 		check(5,true,argc,args); //g.get(args[2], args[3], args[4]);
 	}
+	else if (args[1] == "diagnose")
+	{
+		check(3,true,argc,args); g.diagnose(args[2]);
+	}
+	else if (args[1] == "encode")
+	{
+		check(4,true,argc,args); g.encode(args[2], args[3]);
+	}
+	else if (args[1] == "decode")
+	{
+		check(4,true,argc,args); g.decode(args[2], args[3]);
+	}
 	else if (args[1] == "explode")
 	{
 		check(4,true,argc,args); g.explode(args[2], args[3]);
@@ -144,10 +160,6 @@ int main (int argc, char* const argv[])
 			files.push_back(args[i]);
 		}
 		check(4,false,argc,args); g.implode(files, args[2]);
-	}
-	else if (args[1] == "diagnose")
-	{
-		check(3,true,argc,args); g.diagnose(args[2]);
 	}
 	else
 	{

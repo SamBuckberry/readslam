@@ -3,7 +3,7 @@
 #include <cmath>
 #include <stack>
 #include <vector>
-#include <string>  
+#include <string>
 
 using namespace std;
 
@@ -349,30 +349,33 @@ struct BlockSort
 		
 		this->blocks.resize(this->length);
 		//this->ranges.clear();
+		
 		this->counts.clear();
 		this->counts.resize(LETTERS,0);
-		this->starts.clear();
-		this->starts.resize(LETTERS,-1);
-		this->flags.resize(this->length,false);
 		
+		this->starts.clear();
+		this->starts.resize(LETTERS,0);
+		
+		this->flags.clear();
+		this->flags.resize(this->length,false);
+				
 		for (int i=0; i<length; ++i)
 		{
 			this->blocks[i] = i;
-		}		
-		
+		}
+
 		range(0, this->length-1, 0);
 		
 		while (!this->ranges.empty())
 		{
-			int p3 = ranges.top(); ranges.pop();
-			int p2 = ranges.top(); ranges.pop();
-			int p1 = ranges.top(); ranges.pop();
-
-			range(p1, p1+p2-1, p3);
+			int offset = ranges.top(); ranges.pop();
+			int count = ranges.top(); ranges.pop();
+			int start = ranges.top(); ranges.pop();
+			range(start, start + count - 1, offset);
 		}		
 		blocks = this->blocks;
 	}
-	
+		
 	//Quickly determine if all the characters are the same
 	bool same(int x1, int x2, int offset)
 	{
@@ -387,48 +390,45 @@ struct BlockSort
 		}
 		return true;
 	}
-	
+
 	//Sort all the blocks in a range by reference to an internal offset character
 	void range(int x1, int x2, int offset)
 	{
-		//if (offset > 100) return;
 		if (x1 >= x2) return;
-		
+				
 		//Take a shortcut if possible
 		while(same(x1,x2,offset))
 		{
-			//if (++offset >= 100) return;
 			if (++offset >= length) return;
 		}		
 
-		//Count characters in the range
-		counts.clear();
-		counts.resize(LETTERS,0);
+		//Reset counts
+		for (int i=0; i<LETTERS; ++i)
+		{
+			counts[i] = 0;
+		}
 	
+		//Count characters in the range
 		for (int i=x1; i<=x2; ++i)
 		{
 			int pos = blocks[i] + offset;
 			if (pos >= length) pos -= length;
-			unsigned char c = sequence[pos];
-			counts[c]++;
+			char c = sequence[pos];
+			counts[(unsigned char)c]++;
 			flags[i] = false;
 		}
 
-		//Set the starts for each character
-		starts.clear();
-		starts.resize(LETTERS,-1);
-		int total = 0;
+		//Set the starts for each character block
+		starts[0] = x1;
 	
-		for (int i=0; i<LETTERS; ++i)
+		for (int i=1; i<LETTERS; ++i)
 		{
-			if (counts[i] == 0) continue;
-			starts[i] = total;
-			total += counts[i];
+			starts[i] = starts[i-1] + counts[i-1];
 			
-			//Record subrange on the stack
-			if (counts[i] > 1)
+			//Record subrange if necessary
+			if (counts[i] > 0)
 			{
-				ranges.push(x1+starts[i]);
+				ranges.push(starts[i]);
 				ranges.push(counts[i]);
 				ranges.push(offset+1);
 			}
@@ -452,11 +452,11 @@ struct BlockSort
 				//Determine the destination where this block will go
 				int pos = block + offset;
 				if (pos >= length) pos -= length;
-				unsigned char c = sequence[pos];
-				int dest = x1 + starts[c];
+				char c = sequence[pos];
+				int dest = starts[(unsigned char)c];
 
 				//Increment the visit count
-				starts[c]++;
+				starts[(unsigned char)c]++;
 
 				//Skip if already in the right place
 				if (blocks[dest] == block) break;
@@ -467,6 +467,389 @@ struct BlockSort
 				block = temp;
 				index = dest;
 			}
+		}
+	}
+};
+
+/**
+ * Start with an initial 2-byte radix sort
+ * Use a cache to record blocks that have been terminally placed
+ * Process each sub block using std::sort and a custom comparator that looks for cache hits
+ * Use sub-block sorts to reduce complexity of main block sorts
+ */
+struct BZSort
+{
+	static const int LETTERS = 256;
+	
+	struct Radix
+	{
+		unsigned char byte1;
+		unsigned char byte2;
+		bool sorted;
+		unsigned int start;
+		unsigned int count;
+	};
+		
+	string sequence;
+	int length;
+	vector<int> blocks;
+	vector<int> cache;
+	vector<vector<Radix> > table;
+	
+	//Comparator object for comparing sequence blocks
+	struct Comparator
+	{
+		//Internal pointers required because internal comparator cannot access class scope direcly
+		vector<int> * cache;
+		string * sequence;
+		int length;
+
+		bool operator() (int x1, int x2)
+		{
+			for (int i=0; i<length; ++i)
+			{
+				if ((*sequence)[x1] != (*sequence)[x2])
+				{
+					return (*sequence)[x1] < (*sequence)[x2];
+				}
+				if ((*cache)[x1] >= 0 && (*cache)[x2] >= 0)
+				{
+					return (*cache)[x1] < (*cache)[x2];
+				}
+				x1++; if (x1 == length) x1 = 0;
+				x2++; if (x2 == length) x2 = 0;
+			}
+			return false;
+		}
+	} comparator;
+	
+	//Comparator for sorting ranges by size (smallest to largest)
+	static bool compare_radix(const Radix &a, const Radix &b)
+	{
+		return a.count < b.count;
+	}
+	
+	void sort(string &s, vector<int> &b)
+	{
+		blocks   = b;
+		sequence = s;
+		length   = s.size();
+		
+		cout << "length is: " << length << endl;
+		
+		blocks.clear();
+		blocks.resize(length);
+		
+		cache.clear();
+		cache.resize(length,-1);
+		
+		comparator.sequence = &sequence;
+		comparator.cache = &cache;
+		comparator.length = length;
+		
+		//Initialize the blocks
+		for (int i=0; i<length; ++i)
+		{
+			blocks[i] = i;
+		}
+		
+		//Build the radix table and reorder the blocks
+		cout << "Building table" << endl;
+		build_radix_table();
+		cout << "Reordering blocks" << endl;
+		reorder_blocks();
+		cout << "Sorting" << endl;
+		
+		//Sort outer radix ranges (smallest to largest)
+		vector<Radix> order;
+		order.resize(LETTERS);
+		
+		for (int i=0; i<LETTERS; ++i)
+		{
+			order[i].byte1 = i;
+			order[i].count = 0;
+			
+			for (int j=0; j<LETTERS; ++j)
+			{
+				order[i].count += table[i][j].count;
+			}
+		}
+		std::sort(order.begin(), order.end(), compare_radix);
+
+		//Sort each of the outer radix ranges
+		for (int i=0; i<order.size(); ++i)
+		{
+			//Skip if the outer radix range is empty
+			if (order[i].count == 0) continue;
+			
+			//Sort all the [byte1,n] segments
+			cout << "sort outer radix:" << (char)order[i].byte1 << endl;
+			sort_byte1(order[i].byte1);
+			
+			//Update all the [n,byte1] segments
+			update(order[i].byte1);
+		}
+		b = this->blocks;
+	}
+	
+	//Get the radix value from a specific location
+	void get_radix(int x1, int &byte1, int &byte2)
+	{
+		int x2 = x1 + 1; 
+		if (x2 == length) x2 = 0;
+
+		byte1 = (unsigned char)sequence[x1];
+		byte2 = (unsigned char)sequence[x2];
+	}
+			
+	//Generate the 2-byte radix table
+	void build_radix_table()
+	{
+		//Initialize the radix table
+		table.clear();
+		table.resize(LETTERS);
+		
+		for (int i=0; i<LETTERS; ++i)
+		{
+			table[i].resize(LETTERS);
+			
+			for (int j=0; j<LETTERS; ++j)
+			{
+				table[i][j].byte1 = i;
+				table[i][j].byte2 = j;
+				table[i][j].sorted = false;
+				table[i][j].start = 0;
+				table[i][j].count = 0;
+			}
+		}
+
+		//Count each radix
+		for (int i=0; i<length; ++i)
+		{
+			int b1;
+			int b2;
+			get_radix(i,b1,b2);
+			table[b1][b2].count++;
+		}
+		
+		//Set the offsets
+		unsigned int total = 0;
+		
+		for (int i=0; i<LETTERS; ++i)
+		{
+			for (int j=0; j<LETTERS; ++j)
+			{
+				table[i][j].start = total;
+				total += table[i][j].count;
+			}
+		}
+		// //Print out the radix table
+		// for (int i=0; i<LETTERS; ++i)
+		// {
+		// 	for (int j=0; j<LETTERS; ++j)
+		// 	{
+		// 		Radix r = table[i][j];
+		// 		if (r.count == 0) continue;
+		// 		//cout << (char)r.byte1 << (char)r.byte2 << " " << r.start << " " << r.count << endl;
+		// 	}
+		// }
+	}
+	
+	//Reorder blocks (in-place) from the radix table
+	void reorder_blocks()
+	{
+		vector<bool> placed;
+		placed.resize(length,false);
+		
+		// //Print the blocks
+		// for (int i=0; i<blocks.size(); i++)
+		// {
+		// 	cout << blocks[i] << " ";
+		// }
+		// cout << endl;
+		
+		//Reorder elements (in-place)
+		for (int i=0; i<length; ++i)
+		{
+			int index = i;
+			int block = blocks[index];
+
+			//Trace the block
+			while (true)
+			{
+				//Skip if the block has already been processed
+				if (placed[index] || index < i) break;
+				
+				//Flag this placement
+				placed[index] = true;
+				
+				//Determine the destination where this block will go
+				int b1,b2; get_radix(block,b1,b2);
+				int dest = table[b1][b2].start;
+
+				//Increment the visit count
+				table[b1][b2].start++;
+
+				//Skip if already in the right place
+				if (blocks[dest] == block) break;
+
+				//Do the switch
+				int temp = blocks[dest];
+				blocks[dest] = block;
+				block = temp;
+				index = dest;
+			}
+		}
+		
+		// //Print the blocks
+		// for (int i=0; i<blocks.size(); i++)
+		// {
+		// 	cout << blocks[i] << " ";
+		// }
+		// cout << endl;
+		
+		
+		//Reset the radix starts
+		for (int i=0; i<LETTERS; ++i)
+		{
+			for (int j=0; j<LETTERS; ++j)
+			{
+				table[i][j].start -= table[i][j].count;
+			}
+		}
+		
+		// //Print out the radix table
+		// for (int i=0; i<LETTERS; ++i)
+		// {
+		// 	for (int j=0; j<LETTERS; ++j)
+		// 	{
+		// 		Radix r = table[i][j];
+		// 		if (r.count == 0) continue;
+		// 		cout << (char)r.byte1 << (char)r.byte2 << " " << r.start << " " << r.count << endl;
+		// 	}
+		// }		
+	}
+	
+// 0 aaabaa aaaaab 4
+// 1 aabaaa aaaaba 5
+// 2 abaaaa aaabaa 0
+// 3 baaaaa aabaaa 1
+// 4 aaaaab abaaaa 2
+// 5 aaaaba baaaaa 3
+	
+	//Sort an outer radix group
+	void sort_byte1(int byte1)
+	{
+		//Reorder the inner radix ranges (smallest to largest)
+		vector<Radix> order = table[byte1];
+		std::sort(order.begin(), order.end(), compare_radix);
+		
+		for (int i=0; i<LETTERS; ++i)
+		{
+			Radix inner = order[i];
+			
+			//No need to sort it if already done
+			if (inner.sorted)
+			{
+				continue;
+			}
+			
+			//Flag this entry
+			table[inner.byte1][inner.byte2].sorted = true;
+			
+			//No need to do anything if the range is empty
+			if (inner.count == 0)
+			{
+				continue;
+			}
+			
+			//Sort the inner bucket
+			int x1 = inner.start;
+			int x2 = x1 + inner.count - 1;
+
+			cout << "sorting inner radix [" << (char)inner.byte1 << "," << (char)inner.byte2 << "," << inner.count << "]..." << flush;
+			sort_byte2(x1,x2);
+			cout << "done" << endl;
+		}
+	}
+	
+	//Sort an inner radix group
+	void sort_byte2(int x1, int x2)
+	{
+		if (x1 > x2) return;
+		
+		//Sort if there is more than 1 element
+		if (x1 < x2)
+		{
+			vector<int>::iterator itr1 = blocks.begin();
+			vector<int>::iterator itr2 = blocks.begin();
+
+			itr1 += x1;
+			itr2 += x2 + 1;
+
+			std::sort(itr1,itr2,comparator);
+		}
+		
+		//Print the blocks
+		// for (int i=0; i<length; ++i)
+		// {
+		// 	cout << blocks[i] << " ";
+		// }
+		// cout << endl;
+		
+		//Proper order is now known, set the cache
+		for (int i=x1; i<=x2; ++i)
+		{
+			int block = blocks[i];
+			cache[block] = i;
+			//cout << "Setting cache: " << block << " -> " << i << endl;
+		}
+	}
+	
+	//When an outer radix has been sorted, all inner radix value == outer radix can be updated
+	void update(int byte1)
+	{
+		//Get the range represented by the outer radix
+		int x1 = table[byte1][0].start;
+		int x2 = table[byte1][LETTERS-1].start + table[byte1][LETTERS-1].count - 1;
+		
+		vector<int> counters;
+		counters.clear();
+		counters.resize(LETTERS,0);
+		
+		//For each block in the range
+		for (int x=x1; x<=x2; ++x)
+		{
+			//Get the preceding block
+			int block = blocks[x] - 1;
+			if (block < 0) block = length - 1;
+			
+			//Get the character mapping to that block
+			unsigned char c = sequence[block];
+			
+			//Skip if already sorted
+			if (table[c][byte1].sorted)
+			{
+				continue;
+			}
+			
+			//Get the current position offset in the range covered by radix [c,byte1]
+			int pos = table[c][byte1].start + counters[c];
+			
+			//Set the value of the block
+			blocks[pos] = block;
+			
+			//Store it in the cache
+			cache[block] = pos;
+			
+			//Update the offset counter
+			counters[c]++;
+		}
+		
+		//Flag all the [n,byte1] radix values as sorted
+		for (int i=0; i<LETTERS; ++i)
+		{
+			table[i][byte1].sorted = true;
 		}
 	}
 };

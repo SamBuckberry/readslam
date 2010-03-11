@@ -3,6 +3,7 @@
 #include "../common/_common.h"
 #include "../core/_dna.h"
 #include "../algorithms/sorting.h"
+#include "../algorithms/burrows.h"
 #include <map>
 
 /**
@@ -331,44 +332,48 @@ namespace ReadSlam
 			}
 			
 			//Encode sequences using the Burrows-Wheeler transformation
-			void bw_encode(string infile, string outfile)
+			void encode(string infile, string outfile)
 			{
 				load(infile);
-				vector<int> blocks;
-				BlockSort sorter;
-				string encoded;
+				
+				BurrowsWheeler bw;
 				
 				for (int i=0; i<assemblies.size(); ++i)
 				{
-					cout << "Encoding assembly: " << assemblies[i].name << endl;
-					
-					int len = assemblies[i].length;
-					
-					blocks.clear();
-					encoded.clear();
-
-					blocks.resize(len);
-					encoded.resize(len);
-
-					sorter.sort(assemblies[i].sequence, blocks);
-					
-					int start = 0;
-					
-					for (int j=0; j<len; ++j)
-					{
-						int pos = blocks[j] - 1;
-						
-						if (pos == -1)
-						{
-							start = j;
-							pos = len - 1;
-						}	
-						encoded[j] = assemblies[i].sequence[pos];
-					}
+					bw.encode(assemblies[i].sequence);
 					stringstream header;
-					header << start << "\t" << assemblies[i].name;
+					header << bw.seed << ' ' << assemblies[i].name;
 					assemblies[i].name = header.str();
-					assemblies[i].sequence = encoded;
+					assemblies[i].sequence = bw.columnB;
+				}
+				save(outfile,true);
+			}
+			
+			//Decode a fasta file that has been encoded with the Burrows-Wheeler transformation
+			void decode(string infile, string outfile)
+			{
+				load(infile);
+				
+				BurrowsWheeler bw;
+
+				for (int i=0; i<assemblies.size(); ++i)
+				{
+					//Get the seed
+					string s;
+					int seed;
+					
+					for (int j=0; j<assemblies[i].name.size(); ++j)
+					{
+						if (assemblies[i].name[j] == ' ')
+						{
+							seed = atoi(s.c_str());
+							assemblies[i].name = assemblies[i].name.substr(j+1);
+							break;
+						}
+						s += assemblies[i].name[j];
+					}
+					bw.decode(assemblies[i].sequence, seed);
+					assemblies[i].sequence = bw.original;
 				}
 				save(outfile,true);
 			}

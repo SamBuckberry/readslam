@@ -4,10 +4,30 @@
  *
  * Julian Tonti-Filippini (2010) julian.tonti@gmail.com
  */
+
+/*			
+   plantenergy       sorted        A         B
+-----------------------------------------------
+ 0 plantenergy     antenergypl     a.........l
+ 1 lantenergyp     energyplant     e.........t
+ 2 antenergypl     ergyplanten     e.........n
+ 3 ntenergypla     gyplantener     g.........r
+ 4 tenergyplan     lantenergyp     l.........p
+ 5 energyplant     nergyplante     n.........e
+ 6 nergyplante     ntenergypla     n.........a
+ 7 ergyplanten     plantenergy*    p.........y* <-seed = 7
+ 8 rgyplantene     rgyplantene     r.........e
+ 9 gyplantener     tenergyplan     t.........n
+10 yplantenerg     yplantenerg     y.........g
+                                   -----------
+                                   ltnrpeayeng
+*/
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
+#include "sorting.h"
 
 using namespace std;
 
@@ -22,37 +42,6 @@ struct BurrowsWheeler
 	
 	//Used in the compression of columnA
 	struct Range { int x1,x2; };
-	
-	
-	//Special routine designed for sorting
-	void sorter(int start, int end, int offset)
-	{
-		cout << offset << endl;
-		
-		vector<vector<int> > groups;
-
-		groups.clear();
-		groups.resize(LETTERS);
-		
-		for (int i=0; i<LETTERS; ++i)
-		{
-			groups[i].clear();
-		}
-
-		//Start by looping through the structure from start to end and building a profile
-		for (int i=start; i<=end; ++i)
-		{
-			totals[sequence[i]]++;
-		}
-		
-		//Now reorder the entities
-		for (int i=start; i<=end; ++i)
-		{
-			totals[sequence[i]]++;
-		}
-		
-		
-	}
 		
 	//Comparator object for sorting sequence blocks
 	struct Comparator
@@ -84,37 +73,13 @@ struct BurrowsWheeler
 	vector<int>  mapback; //Provides a map from the ordered blocks to the original sequence position
 	string       columnA; //The columnA sequence in the sorted matrix
 	string       columnB; //The columnB sequence in the sorted matrix
+	string      original; //The original sequence
 	int           length; //Length of the string (number of blocks)
 	int             seed; //The block-index of the original start position
 	
-	//Build from an input string (either already encoded or raw)
-	public: void build(string &str, bool encoded, int seed)
-	{
-		if (str.size() == 0) return;
-		
-		length = str.size();
-		columnA.resize(length);
-		columnB.resize(length);
-		columnB = str;
-		this->seed = seed;
-		
-		//Build columnA
-		buildA(str);
-		
-		//Only need to build columnB if the string is not encoded, otherwise the string IS columnB
-		if (!encoded)
-		{
-			buildB(str);
-		}
-
-		//Build the index
-		build_index();
-	}
-	
-	//Build columnA (the sorted string) from any string.
+	//Build columnA from any string (internally sorted string)
 	private: void buildA(string &str)
 	{
-		cout << "Building column A..." << flush;
 		//Count occurrences of each character
 		vector<int> counts(LETTERS,0);
 
@@ -140,20 +105,17 @@ struct BurrowsWheeler
 			//Populate the characters of columnA for this range
 			for (int j=groups[i].x1; j<=groups[i].x2; ++j)
 			{
-				columnA[j] = i;
+				columnA[j] = (char)i;
 			}
 
 			//Jump to the start of the next range
 			pos += counts[i];
 		}
-		cout << "done" << endl;
 	}
 	
-	//Build columnB (the encoded string) from a raw string. Assumes columnA is already built
+	//Build columnB (the encoded string) from a raw string (assumes A is already built)
 	private: void buildB(string &str)
 	{
-		cout << "Building column B..." << flush;
-		
 		//Build the sequence-block table
 		vector<int> blockstarts(length,0);
 
@@ -162,15 +124,14 @@ struct BurrowsWheeler
 			blockstarts[i] = i;
 		}
 
-		cout << length;
-		cout << "sorting..." << flush;
-		
 		//Sort the sequence blocks by alphabetical order
 		comparator.seq = str;
-		comparator.len = length;		
-		sort(blockstarts.begin(), blockstarts.end(), comparator);
+		comparator.len = length;
 		
-		cout << "done..." << flush;
+		//BlockSort sorter;
+		BZSort sorter;
+		sorter.sort(str, blockstarts);		
+		//sort(blockstarts.begin(), blockstarts.end(), comparator);
 		
 		//Build columnB (the encoding)
 		for (int i=0; i<length; ++i)
@@ -187,14 +148,11 @@ struct BurrowsWheeler
 			}
 			columnB[i] = str[blockend];
 		}
-		cout << "finished" << endl;
 	}
 	
 	//Build the index. Assumes that columns A and B are already built, and that the seed is known
 	private: void build_index()
 	{
-		cout << "Building index..." << flush;
-		
 		//Counters for each of the characters in the sequence
 		vector<int> counters(LETTERS,0);
 		
@@ -204,8 +162,8 @@ struct BurrowsWheeler
 		for (int i=0; i<length; ++i)
 		{
 			//The character for columnB (known from the encoded string) will become 'new_a' when we move it to the front
-			char old_a = columnA[i];
-			char new_a = columnB[i];
+			int old_a = (unsigned char)columnA[i];
+			int new_a = (unsigned char)columnB[i];
 			
 			//Now we are effectively moving charB to the front (making it charA) and re-sorting to determine the new block index (offset[charB] + counters[charB])
 			int old_index = i;
@@ -227,45 +185,61 @@ struct BurrowsWheeler
 			mapback[pos] = i;
 			pos = links[pos];
 		}
-		cout << "done" << endl;
 	}
 	
-	//Get the encoded string (columnB)
-	public: void encode(string &out)
+	//Take a raw string and encode it
+	public: void encode(string &decoded)
 	{
-		out.resize(length);
+		if (decoded.size() == 0) return;
 		
-		for (int i=0; i<length; ++i)
-		{
-			out[i] = columnB[i];
-		}
+		original = decoded;
+		length = original.size();
+		columnA.resize(length);
+		columnB.resize(length);
+		
+		buildA(original);
+		buildB(original);
+		build_index();
 	}
 		
-	//Decode to produce the original string (import required first)
-	public: void decode(string &out)
+	//Decode an encoded string
+	public: void decode(string &encoded, int start)
 	{
-		decode_substring(out, seed, length);
+		if (encoded.size() == 0) return;
+		
+		length = encoded.size();
+		columnA.resize(length);
+		columnB.resize(length);
+		original.resize(length);
+		columnB = encoded;
+		seed = start;
+		
+		buildA(encoded);
+		build_index();
+		decode_substring(original,seed,length);
 	}
 	
 	//Encode a file
 	public: void file_encode(string infile, string outfile)
 	{
-		string line = "";
-		string seq = "";
-				
 		ifstream in (infile.c_str());
+
+		char c;
+		string seq = "";
 		
-		while (getline(in,line))
+		while (true)
 		{
-			seq += line;
+			in.get(c);
+			if (!in.good()) break;
+			seq += c;
 		}
 		in.close();
-
-		build(seq, false, 0);
+		seq.resize(seq.size() - 1); //trim off the last newline
+		
 		encode(seq);
 
 		ofstream out(outfile.c_str());
-		out << seq;
+		out << seed << "\n" << columnB;
 		out.close();
 	}
 	
@@ -277,17 +251,24 @@ struct BurrowsWheeler
 		
 		ifstream in(infile.c_str());
 		
-		while (getline(in,line))
+		//The seed is the first line
+		getline(in, line);
+		seed = atoi(line.c_str());
+		
+		char c;
+		
+		while (in.good())
 		{
-			seq += line;
+			in.get(c);
+			seq += c;
 		}
 		in.close();
+		seq.resize(seq.size() - 1); //trim off the last newline		
 
-		build(seq, true, 0);
-		decode(seq);
+		decode(seq, seed);
 
 		ofstream out(outfile.c_str());
-		out << seq;
+		out << original << endl;
 		out.close();
 	}
 	
