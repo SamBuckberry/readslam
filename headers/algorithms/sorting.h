@@ -507,6 +507,7 @@ struct BZSort
 
 		bool operator() (int x1, int x2)
 		{
+			cout << ".";
 			for (int i=0; i<length; ++i)
 			{
 				if ((*sequence)[x1] != (*sequence)[x2])
