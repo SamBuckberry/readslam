@@ -1734,7 +1734,7 @@ struct MergeBlockSort
 	{
 		for (int i=x1; i<x2; ++i)
 		{
-			cout << i << " : " << ups[blocks[x1]] << " : ";
+			cout << i << " : " << ups[blocks[i]] << " : ";
 			for (int j=0; j<64; ++j)
 			{
 				int p = blocks[x1] + j; if (p >= length) p -= length;
@@ -1745,7 +1745,7 @@ struct MergeBlockSort
 		cout << endl;
 		for (int i=x2; i<=end; ++i)
 		{
-			cout << i << " : " << ups[blocks[x2]] << " : ";
+			cout << i << " : " << ups[blocks[i]] << " : ";
 			for (int j=0; j<160; ++j)
 			{
 				int p = blocks[x2] + j; if (p >= length) p -= length;
@@ -1880,6 +1880,7 @@ struct MergeBlockSort
 				}
 			}
 		}
+
 		
 		//Copy sorted elements back into the original vector
 		for (int i=startA; i<=end; ++i)
@@ -1919,7 +1920,7 @@ struct MergeBlockSort
 		{
 			blocks[i] = i;
 			cache[i] = -1;
-			ups[i] = 0;
+			ups[i] = -1;
 		}
 		
 		cout << "Sorting" << endl;
