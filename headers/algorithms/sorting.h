@@ -1734,7 +1734,7 @@ struct MergeBlockSort
 	{
 		for (int i=x1; i<x2; ++i)
 		{
-			cout << i << " : ";
+			cout << i << " : " << ups[blocks[x1]] << " : ";
 			for (int j=0; j<64; ++j)
 			{
 				int p = blocks[x1] + j; if (p >= length) p -= length;
@@ -1745,8 +1745,8 @@ struct MergeBlockSort
 		cout << endl;
 		for (int i=x2; i<=end; ++i)
 		{
-			cout << i << " : ";
-			for (int j=0; j<64; ++j)
+			cout << i << " : " << ups[blocks[x2]] << " : ";
+			for (int j=0; j<160; ++j)
 			{
 				int p = blocks[x2] + j; if (p >= length) p -= length;
 				cout << sequence[p];
