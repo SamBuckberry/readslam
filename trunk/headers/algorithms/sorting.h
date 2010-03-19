@@ -1824,7 +1824,7 @@ struct MergeBlockSort
 						// cout << i << " " << blocks[posA] << endl;
 						copy.push(blocks[posA]);
 						posA++; sizeA--;
-						ups[blocks[posB]] = a;
+						if (a != b) ups[blocks[posB]] = a;
 					}
 					else
 					{
@@ -1832,7 +1832,7 @@ struct MergeBlockSort
 						// cout << i << " " << blocks[posB] << endl;
 						copy.push(blocks[posB]);
 						posB++; sizeB--;
-						ups[blocks[posA]] = a;
+						if (a != b) ups[blocks[posA]] = a;
 					}
 				}
 			}
