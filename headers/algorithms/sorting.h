@@ -1738,10 +1738,7 @@ struct MergeBlockSort
 		}
 		if (iteration >= 64)
 		{
-			if (calls % 100 == 0)
-			{
-				cout << calls << "\r" << flush;
-			}
+			cout << calls << "\r" << flush;
 		}
 		
 		
