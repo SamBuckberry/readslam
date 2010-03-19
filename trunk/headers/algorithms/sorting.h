@@ -1732,7 +1732,7 @@ struct MergeBlockSort
 	void merge(int startA, int startB, int end, int offset)
 	{
 		calls++;
-		if (calls % 1000 == 0) cout << calls << "\r";
+		if (calls % 100000 == 0) cout << calls << "\r";
 		
 		int sizeA = startB - startA;
 		int sizeB = end - startB + 1;
