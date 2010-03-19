@@ -1731,8 +1731,10 @@ struct MergeBlockSort
 	//Merge two sub-blocks together
 	void merge(int startA, int startB, int end, int offset)
 	{
-		calls++;
-		if (calls % 1000000 == 0) cout << calls << "\r";
+		if (++calls % 1000000 == 0)
+		{
+			cout << calls << "\r" << flush;
+		}
 		
 		int sizeA = startB - startA;
 		int sizeB = end - startB + 1;
