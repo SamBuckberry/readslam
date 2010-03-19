@@ -129,7 +129,9 @@ struct BurrowsWheeler
 		comparator.len = length;
 		
 		//BlockSort sorter;
-		BZSort sorter;
+		//BZSort sorter;
+		//CachedBlockSort sorter;
+		MergeBlockSort sorter;
 		sorter.sort(str, blockstarts);		
 		//sort(blockstarts.begin(), blockstarts.end(), comparator);
 		
