@@ -1649,6 +1649,7 @@ struct MergeBlockSort
 	
 	int calls;
 	int advances;
+	int iteration;
 	
 	//Compare two blocks at an offset and advance the offset until they differ
 	int advance(int x1, int x2, int offset)
@@ -1715,7 +1716,7 @@ struct MergeBlockSort
 		for (int bin=1; bin<range; bin*=2)
 		{
 			cout << endl << "Sorting iteration: " << bin << endl;
-			calls = 0; advances = 0;
+			calls = 0; advances = 0; iteration = bin;
 			
 			//Merge two sub-blocks
 			for (int start=x1; start<=x2; start+=2*bin)
@@ -1735,6 +1736,14 @@ struct MergeBlockSort
 		{
 			cout << calls << "\r" << flush;
 		}
+		if (iteration >= 64)
+		{
+			if (calls % 100 == 0)
+			{
+				cout << calls << "\r" << flush;
+			}
+		}
+		
 		
 		int sizeA = startB - startA;
 		int sizeB = end - startB + 1;
