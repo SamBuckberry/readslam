@@ -1647,6 +1647,9 @@ struct MergeBlockSort
 	vector<int> cache;
 	vector<int> ups;
 	
+	int calls;
+	int advances;
+	
 	//Compare two blocks at an offset and advance the offset until they differ
 	int advance(int x1, int x2, int offset)
 	{
@@ -1712,6 +1715,7 @@ struct MergeBlockSort
 		for (int bin=1; bin<range; bin*=2)
 		{
 			cout << endl << "Sorting iteration: " << bin << endl;
+			calls = 0; advances = 0;
 			
 			//Merge two sub-blocks
 			for (int start=x1; start<=x2; start+=2*bin)
@@ -1720,76 +1724,15 @@ struct MergeBlockSort
 				if (end > x2) end = x2;
 				merge(start, start + bin, end, offset);
 			}
+			cout << calls << " " << advances << endl;
 		}
 	}
-	
-	//Merge two sub-blocks together
-	void merge2(int startA, int startB, int end, int offset)
-	{
-		//cout << startA << ":" << startB << ":" << end << endl;
-		int sizeA = startB - startA;
-		int sizeB = end - startB + 1;
-		int size  = end - startA + 1;
-		
-		if (sizeA > size) sizeA = size;
-		if (sizeB < 0) sizeB = 0;
-		
-		int posA = startA;
-		int posB = startB;
-
-		//Merge the two ranges into the queue
-		for (int i=startA; i<=end; ++i)
-		{
-			if (sizeA == 0)
-			{
-				copy.push(blocks[posB]);
-				posB++; sizeB--;
-			}
-			else if (sizeB == 0)
-			{
-				copy.push(blocks[posA]);
-				posA++; sizeA--;
-			}
-			else
-			{
-				//offset = advance(posA, posB, offset);
-			
-				if (compare(posA, posB, advance(posA,posB,offset)))
-				{
-					copy.push(blocks[posA]);
-					posA++; sizeA--;
-				}
-				else
-				{
-					copy.push(blocks[posB]);
-					posB++; sizeB--;
-				}
-			}
-		}
-		
-		//Copy sorted elements back into the original vector
-		for (int i=startA; i<=end; ++i)
-		{
-			if (copy.empty())
-			{
-				cout << "LOGICAL ERROR: 1886" << endl;
-			}
-			blocks[i] = copy.front();
-			//cout << "set:" << i << " to " << blocks[i] << endl;
-			copy.pop();
-		}
-		
-		if (!copy.empty())
-		{
-			cout << "LOGICAL ERROR: 1886" << endl;
-		}
-	}
-	
-	
 	
 	//Merge two sub-blocks together
 	void merge(int startA, int startB, int end, int offset)
 	{
+		calls++;
+		
 		int sizeA = startB - startA;
 		int sizeB = end - startB + 1;
 		int size  = end - startA + 1;
@@ -1872,6 +1815,7 @@ struct MergeBlockSort
 				{
 					//Advance to find the first point of difference
 					a = advance(posA, posB, a);
+					advances++;
 
 					//Push the better element onto the queue and alter the 'up' value of the lesser
 					if (compare(posA, posB, a))
@@ -1923,6 +1867,9 @@ struct MergeBlockSort
 		
 		ups.clear();
 		ups.resize(length);
+		
+		calls = 0;
+		advances = 0;
 		
 		//Initialize the blocks
 		for (int i=0; i<length; ++i)
