@@ -1748,7 +1748,12 @@ struct MergeBlockSort
 		int posB = startB;
 		
 		//Advance the offset to the point of first difference
-		//offset = advance(posA, posB, offset);
+		offset = advance(posA, posB, offset);
+		
+		if (offset == -1)
+		{
+			cout << "\n" << "ERROR" << endl;
+		}
 		
 		// cout << "Comparing:[" << blocks[posA] << "," << blocks[posB] <<endl;
 		
