@@ -1820,8 +1820,8 @@ struct MergeBlockSort
 				else
 				{
 					//Advance to find the first point of difference
-					//a = advance(posA, posB, b);
-					//if (a != b) advances++;
+					a = advance(posA, posB, b);
+					if (a != b) advances++;
 
 					//Push the better element onto the queue and alter the 'up' value of the lesser
 					if (compare(posA, posB, a))
