@@ -1769,6 +1769,7 @@ struct MergeBlockSort
 			posB++; sizeB--;
 			ups[blocks[posA]] = offset;
 		}
+		return;
 		
 		//Merge the two ranges into the queue
 		for (int i=1; i<size; ++i)
