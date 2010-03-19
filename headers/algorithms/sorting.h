@@ -1729,6 +1729,33 @@ struct MergeBlockSort
 		}
 	}
 	
+	//Print out the stacks to the screen from the specified offsets
+	void dump(int x1, int x2, int end, int offset)
+	{
+		for (int i=x1; i<x2; ++i)
+		{
+			cout << i << " : ";
+			for (int j=0; j<64; ++j)
+			{
+				int p = blocks[x1] + j; if (p >= length) p -= length;
+				cout << sequence[p];
+			}
+			cout << endl;
+		}
+		cout << endl;
+		for (int i=x2; i<=end; ++i)
+		{
+			cout << i << " : ";
+			for (int j=0; j<64; ++j)
+			{
+				int p = blocks[x2] + j; if (p >= length) p -= length;
+				cout << sequence[p];
+			}
+			cout << endl;
+		}
+	}
+	
+	
 	//Merge two sub-blocks together
 	void merge(int startA, int startB, int end, int offset)
 	{
@@ -1738,9 +1765,11 @@ struct MergeBlockSort
 		}
 		if (iteration >= 64)
 		{
-			cout << calls << "\r" << flush;
+			if (calls == 958620)
+			{
+				dump(startA, startB, end, offset);
+			}
 		}
-		
 		
 		int sizeA = startB - startA;
 		int sizeB = end - startB + 1;
