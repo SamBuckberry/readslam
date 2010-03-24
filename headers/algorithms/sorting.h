@@ -1631,122 +1631,44 @@ struct CachedBlockSort
 
 
 /**
- * Start with an initial 2-byte radix sort
- * Use a cache to record blocks that have been terminally placed
- * Process each sub block using std::sort and a custom comparator that looks for cache hits
- * Use sub-block sorts to reduce complexity of main block sorts
+ * Basically a merge-sort that uses tail end recursion
+ * 'Up' pointers are used to mark diagonal threads and accelerate the merge step
  */
-struct MergeBlockSort
+struct CrossThreadSort
 {
-	static const int LETTERS = 256;
-
 	string sequence;
 	int length;
 	queue<int> copy;
 	vector<int> blocks;
-	vector<int> cache;
 	vector<int> ups;
+	vector<int> winners;
+	vector<int> anchors;
 	
 	int calls;
 	int advances;
 	int iteration;
+	int shortcuts;
 	
-	//Compare two blocks at an offset and advance the offset until they differ
-	int advance(int x1, int x2, int offset)
+	//Print out the stacks to the screen
+	void dump(int x1, int x2, int end)
 	{
-		x1 = blocks[x1] + offset; if (x1 >= length) x1 -= length;
-		x2 = blocks[x2] + offset; if (x2 >= length) x2 -= length;
-
-		while (offset < length)
-		{
-			if (sequence[x1] != sequence[x2])     return offset;
-			//if (cache[x1] >= 0 && cache[x2] >= 0) return offset;
-			
-			if (++x1 == length) x1 = 0;
-			if (++x2 == length) x2 = 0;
-			
-			offset++;
-		}
-		return -1;
-	}
-	
-	//Compare two blocks at a specific offset for ordering
-	bool compare(int x1, int x2, int offset)
-	{
-		x1 = blocks[x1] + offset; if (x1 >= length) x1 -= length;
-		x2 = blocks[x2] + offset; if (x2 >= length) x2 -= length;
-
-		if (sequence[x1] != sequence[x2])
-		{
-			return sequence[x1] < sequence[x2];
-		}
-		// if (cache[x1] >= 0 && cache[x2] >= 0)
-		// {
-		// 	return cache[x1] < cache[x2];
-		// }
-		return false;
-	}
-	
-	// //Swap two blocks
-	// void swap(int x1, int x2)
-	// {
-	// 	if (x1 == x2) return;
-	// 	int temp = blocks[x1];
-	// 	blocks[x2] = blocks[x1];
-	// 	blocks[x1] = temp;
-	// }	
-	// 
-	// //Sort two blocks
-	// void sort_two(int x1, int x2, int offset)
-	// {
-	// 	offset = advance(x1,x2,offset);
-	// 	if (compare(x1,x2,offset)) return;
-	// 	swap(x1,x2);
-	// }
-	
-	//Sort a range based on cache value at the specified offset
-	void merge_sort(int x1, int x2, int offset)
-	{
-		int range = x2 - x1 + 1;
+		int len = (length > 80) ? 80 : length;
 		
-		// if (range == 1) { return; }
-		// if (range == 2) { sort_two(x1,x2,offset); return; }
-
-		//For each 2^n iteration
-		for (int bin=1; bin<range; bin*=2)
-		{
-			cout << endl << "Sorting iteration: " << bin << endl;
-			calls = 0; advances = 0; iteration = bin;
-			
-			//Merge two sub-blocks
-			for (int start=x1; start<=x2; start+=2*bin)
-			{
-				int end = start + (2 * bin) - 1; 
-				if (end > x2) end = x2;
-				merge(start, start + bin, end, offset);
-			}
-			cout << calls << " " << advances << endl;
-		}
-	}
-	
-	//Print out the stacks to the screen from the specified offsets
-	void dump(int x1, int x2, int end, int offset)
-	{
 		for (int i=x1; i<x2; ++i)
 		{
-			cout << i << " : " << ups[blocks[i]] << " : ";
-			for (int j=0; j<64; ++j)
+			cout << blocks[i] << " : " << ups[blocks[i]] << " : ";
+			for (int j=0; j<len; ++j)
 			{
 				int p = blocks[i] + j; if (p >= length) p -= length;
 				cout << sequence[p];
 			}
 			cout << endl;
 		}
-		cout << endl;
+		cout << "-------------------" << endl;
 		for (int i=x2; i<=end; ++i)
 		{
-			cout << i << " : " << ups[blocks[i]] << " : ";
-			for (int j=0; j<160; ++j)
+			cout << blocks[i] << " : " << ups[blocks[i]] << " : ";
+			for (int j=0; j<len; ++j)
 			{
 				int p = blocks[i] + j; if (p >= length) p -= length;
 				cout << sequence[p];
@@ -1754,163 +1676,97 @@ struct MergeBlockSort
 			cout << endl;
 		}
 	}
+
+	// //Compare two blocks at an offset and advance the offset until they differ
+	// int advance(int x1, int x2, int offset)
+	// {
+	// 	x1 = blocks[x1] + offset; if (x1 >= length) x1 -= length;
+	// 	x2 = blocks[x2] + offset; if (x2 >= length) x2 -= length;
+	// 
+	// 	while (offset < length)
+	// 	{
+	// 		if (sequence[x1] != sequence[x2]) return offset;
+	// 		
+	// 		if (++x1 == length) x1 = 0;
+	// 		if (++x2 == length) x2 = 0;
+	// 		
+	// 		offset++;
+	// 	}
+	// 	return -1;
+	// }
 	
+	// //Compare two blocks (specified by string position) and advance the offset until they differ
+	// int advance_old(int x1, int x2, int offset)
+	// {
+	// 	x1 += offset; if (x1 >= length) x1 -= length;
+	// 	x2 += offset; if (x2 >= length) x2 -= length;
+	// 
+	// 	while (offset < length)
+	// 	{
+	// 		if (sequence[x1] != sequence[x2]) return offset;
+	// 		
+	// 		if (++x1 == length) x1 = 0;
+	// 		if (++x2 == length) x2 = 0;
+	// 		
+	// 		offset++;
+	// 	}
+	// 	cout << "ERROR, entire block is a repeat" << endl;
+	// 	return -1;
+	// }
 	
-	//Merge two sub-blocks together
-	void merge(int startA, int startB, int end, int offset)
+	// //Advance through two blocks until a difference can be found. Set the 'up' pointer for the loser. Return true if A wins, false otherwise
+	// bool advance(int x1, int x2, int offset)
+	// {
+	// 	x1 += offset; if (x1 >= length) x1 -= length;
+	// 	x2 += offset; if (x2 >= length) x2 -= length;
+	// 
+	// 	while (offset < length)
+	// 	{
+	// 		if (winners[x1] == x2) { ups[x2] = anchors[x1]; shortcuts += anchors[x1] - offset; return true;  }
+	// 		if (winners[x2] == x1) { ups[x1] = anchors[x2]; shortcuts += anchors[x1] - offset; return false; }
+	// 
+	// 		if (sequence[x1] < sequence[x2]) { ups[x2] = offset; return true;  }
+	// 		if (sequence[x1] > sequence[x2]) { ups[x1] = offset; return false; }
+	// 
+	// 		if (++x1 == length) x1 = 0;
+	// 		if (++x2 == length) x2 = 0;
+	// 	
+	// 		offset++;
+	// 		advances++;
+	// 	}
+	// 	cout << "ERROR, entire block is a repeat" << endl;
+	// 	exit(1);
+	// }	
+	
+	// //Compare two blocks (specified by string position) at a specific offset for ordering
+	// int compare(int x1, int x2, int offset)
+	// {
+	// 	x1 += offset; if (x1 >= length) x1 -= length;
+	// 	x2 += offset; if (x2 >= length) x2 -= length;
+	// 	
+	// 	if      (sequence[x1] < sequence[x2]) return -1;
+	// 	else if (sequence[x1] > sequence[x2]) return  1;
+	// 	else                                  return  0;
+	// }
+		
+	//Initialize the object
+	void init(string &s, vector<int> &b)
 	{
-		if (++calls % 100000 == 0)
-		{
-			cout << calls << "\r" << flush;
-		}
-		if (iteration >= 64)
-		{
-			if (calls == 958620)
-			{
-				dump(startA, startB, end, offset);
-			}
-		}
-		
-		int sizeA = startB - startA;
-		int sizeB = end - startB + 1;
-		int size  = end - startA + 1;
-
-		if (sizeA > size) sizeA = size;
-		
-		//No need to do anything in these cases
-		if (size <= 1) return;
-		if (sizeB <= 0) return;
-		
-		int posA = startA;
-		int posB = startB;
-		
-		//Advance the offset to the point of first difference
-		offset = advance(posA, posB, offset);
-		
-		if (offset == -1)
-		{
-			cout << "\n" << "ERROR" << endl;
-		}
-		
-		// cout << "Comparing:[" << blocks[posA] << "," << blocks[posB] <<endl;
-		
-		//Write the better element to the queue and set the 'up' pointer for the other
-		if (compare(posA, posB, offset))
-		{
-			// cout << "First A is better" << endl;
-			// cout << 0 << " " << blocks[posA] << endl;			
-			copy.push(blocks[posA]);
-			posA++; sizeA--;
-			ups[blocks[posB]] = offset;
-		}
-		else
-		{
-			// cout << "First B is better" << endl;
-			// cout << 0 << " " << blocks[posB] << endl;			
-			copy.push(blocks[posB]);
-			posB++; sizeB--;
-			ups[blocks[posA]] = offset;
-		}
-		
-		//Merge the two ranges into the queue
-		for (int i=1; i<size; ++i)
-		{
-			// cout << "Comparing:[" << blocks[posA] << "," << blocks[posB] <<endl;
-
-			//If A is empty, flush B
-			if (sizeA == 0)
-			{
-				// cout << "A is empty" << endl;
-				// cout << i << " " << blocks[posB] << endl;
-				copy.push(blocks[posB]);
-				posB++; sizeB--;
-			}
-			//If B is empty, flush A
-			else if (sizeB == 0)
-			{
-				// cout << "B is empty" << endl;
-				// cout << i << " " << blocks[posA] << endl;
-				copy.push(blocks[posA]);
-				posA++; sizeA--;
-			}
-			//If A and B need merging
-			else
-			{
-				int a = ups[blocks[posA]];
-				int b = ups[blocks[posB]];
-				
-				//Push the better element onto the queue.
-				if (a < b)
-				{
-					// cout << "B is better" << endl;
-					// cout << i << " " << blocks[posB] << endl;
-					copy.push(blocks[posB]);
-					posB++; sizeB--;
-				}
-				else if (a > b)
-				{
-					// cout << "A is better" << endl;
-					// cout << i << " " << blocks[posA] << endl;
-					copy.push(blocks[posA]);
-					posA++; sizeA--;
-				}
-				else
-				{
-					//Advance to find the first point of difference
-					a = advance(posA, posB, b);
-					if (a != b) advances++;
-
-					//Push the better element onto the queue and alter the 'up' value of the lesser
-					if (compare(posA, posB, a))
-					{
-						// cout << "Same but A is better" << endl;
-						// cout << i << " " << blocks[posA] << endl;
-						copy.push(blocks[posA]);
-						posA++; sizeA--;
-						if (a != b) ups[blocks[posB]] = a;
-					}
-					else
-					{
-						// cout << "Same but B is better" << endl;
-						// cout << i << " " << blocks[posB] << endl;
-						copy.push(blocks[posB]);
-						posB++; sizeB--;
-						if (a != b) ups[blocks[posA]] = a;
-					}
-				}
-			}
-		}
-
-		
-		//Copy sorted elements back into the original vector
-		for (int i=startA; i<=end; ++i)
-		{
-			if (copy.empty())
-			{
-				cout << "LOGICAL ERROR: 1886" << endl;
-			}
-			blocks[i] = copy.front();
-			//cout << "set:" << i << " to " << blocks[i] << endl;
-			copy.pop();
-		}
-	}	
-	
-	//Main sorting routine
-	void sort(string &s, vector<int> &b)
-	{
-		//Initialize the object
 		blocks   = b;
 		sequence = s;
 		length   = s.size();
 
 		blocks.clear();
 		blocks.resize(length);
-
-		cache.clear();
-		cache.resize(length);
 		
 		ups.clear();
 		ups.resize(length);
+		
+		winners.clear();
+		winners.resize(length);
+		
+		anchors.clear();
+		anchors.resize(length);
 		
 		calls = 0;
 		advances = 0;
@@ -1919,14 +1775,504 @@ struct MergeBlockSort
 		for (int i=0; i<length; ++i)
 		{
 			blocks[i] = i;
-			cache[i] = -1;
 			ups[i] = -1;
+			winners[i] = -1;
+			anchors[i] = -1;
 		}
+	}
+	
+	//Merge sort the blocks
+	void sort(string &s, vector<int> &b)
+	{
+		//Initialize
+		init(s,b);
 		
-		cout << "Sorting" << endl;
-		merge_sort(0,length-1,0);
+		//For each n^2 iteration
+		for (int bin=1; bin<length; bin*=2)
+		{
+			cout << "Sorting iteration: " << bin << endl;
+			calls = 0; advances = 0; shortcuts = 0; iteration = bin;
+			
+			//Clear out the winners table
+			for (int i=0; i<length; ++i)
+			{
+				winners[i] = -1;
+				anchors[i] = -1;
+			}
+			
+			//Merge each pair of bins
+			for (int start=0; start<length; start+=2*bin)
+			{
+				//Determine the sizes of the two bins
+				int sizeA = bin;
+				int sizeB = bin;
+				
+				//Adjust bin B if necessary
+				if (start + 2*bin > length)
+				{
+					sizeB = length - (start + bin);
+					
+					//No merge necessary if B is empty. Remember to reset the flag (this is the odd bin at the end)
+					if (sizeB <= 0)
+					{
+						ups[blocks[start]] = -1;
+						continue;
+					}
+				}
+				
+				// //Check if the lead indicator is set
+				// int firstdiff = ups[blocks[start]];
+				// 
+				// //Determine the point of first difference if required
+				// if (firstdiff == -1)
+				// {
+				// 	//Find the first point of difference between the parent sequences of the squares
+				// 	firstdiff = start + advance(start, start+bin, 0);
+				// 
+				// 	//Set as many 'up' pointers as possible for this iteration (downstream)
+				// 	for (int i=start; i<=firstdiff; i+=2*bin)
+				// 	{
+				// 		ups[blocks[i]] = firstdiff;
+				// 	}
+				// }
+				// 
+				// //Determine the offset
+				// int offset = firstdiff - start;
+				
+				//Set this offset as the 'up' pointer for the lead blocks
+				// ups[start]     = offset;
+				// ups[start+bin] = offset;
+				
+				//Merge the blocks taking a shortcut if possible
+				merge(start, sizeA, sizeB);
+				
+				// if (offset < bin)
+				// {
+				// 	//Bin sequence is not identical. Squares are not identical
+				// 	merge(start, sizeA, sizeB, offset);
+				// }
+				// else if (offset < 2*bin)
+				// {
+				// 	//Bin sequence is identical. Squares are not identical
+				// 	merge(start, sizeA, sizeB, offset);
+				// }
+				// else 
+				// {
+				// 	//Bin sequence is identical. Squares are identical
+				// 	merge(start, sizeA, sizeB, offset);
+				// }
+				
+				//Mark the current lead indicator for NEXT iteration if possible
+				// if (firstdiff >= 2*bin)
+				// {
+				// 	ups[blocks[start]] = firstdiff;
+				// }
+
+				// :: SHORTCUT IN PARENT MERGE
+				// ----a-------b----------------------------------------------------
+				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+				// A->a
+				// 
+				// ------------a-------b--------------------------------------------
+				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+				// A->a
+				// 
+				// --------------------a-------b------------------------------------
+				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+				// A->a, C->a
+				// 
+				// ----------------------------a-------b----------------------------
+				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+				// A->a, C->a
+				// 
+				// ------------------------------------a-------b--------------------
+				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+				// A->a, C->a, E->a
+				// 
+				// --------------------------------------------a-------b------------
+				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+				// A->a, C->a, E->a
+				// 
+				// ----------------------------------------------------a-------b----
+				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+				// A->a, C->a, E->a, G->a
+			}
+			cout << "Calls:" << calls << " Advances:" << advances << " Shortcuts: " << shortcuts << endl;
+		}
+
+		//Set the sorted blocks
 		b = blocks;
 	}
+	
+	//Merge two squares together
+	void merge(int start, int sizeA, int sizeB)
+	{
+		int posA = start;
+		int posB = start + sizeA;
+		int size = sizeA + sizeB;
+		int bin  = sizeA;
+
+		//Set the initial offset for the elements
+		ups[blocks[posA]] = 0;
+		ups[blocks[posB]] = 0;
+		
+		//Merge the two ranges into the queue
+		for (int i=0; i<size; ++i)
+		{
+			//If a block is empty, flush the other and break
+			if (sizeA == 0) { while (i<size) { copy.push(blocks[posB]); posB++; i++; } break; }
+			if (sizeB == 0) { while (i<size) { copy.push(blocks[posA]); posA++; i++; } break; }
+
+			//Queue the better block
+			bool ok = merge_pair(blocks[posA], blocks[posB]);
+			
+			if (ok) { copy.push(blocks[posA]); posA++; sizeA--; }
+			else    { copy.push(blocks[posB]); posB++; sizeB--; }
+		}
+		
+		//cout << "MERGE: " << iteration << "[" << start << "," << (start+bin) << "][" << sizeA << "," << sizeB << "]" << endl;
+		//dump(start, start+bin, size-1);		
+		flush(start,size);
+	}
+	
+	//Used during merge to compare lead blocks. Returns true if A is the winner. Adjusts 'up' pointer of the loser
+	bool merge_pair(int startA, int startB)
+	{
+		int upA = ups[startA];
+		int upB = ups[startB];
+		
+		//If the offset pointers are different, return the instant winner
+		if (upA != upB) return upA > upB;
+		
+		int x1 = startA + upA; if (x1 >= length) x1 -= length;
+		int x2 = startB + upB; if (x2 >= length) x2 -= length;
+
+		for (int offset=upA; offset<length; ++offset)
+		{
+			//Winners table can provide a shortcut
+			if (winners[x1] == x2) { ups[startB] = offset + anchors[x1]; update_winners(startA,startB,offset); return true;  }
+			if (winners[x2] == x1) { ups[startA] = offset + anchors[x2]; update_winners(startB,startA,offset); return false; }
+
+			//Return when the sequence differs
+			if (sequence[x1] < sequence[x2]) { ups[startB] = offset; update_winners(startA,startB,offset); return true;  }
+			if (sequence[x1] > sequence[x2]) { ups[startA] = offset; update_winners(startB,startA,offset); return false; }
+			
+			x1++; if (x1 == length) x1 = 0;
+			x2++; if (x2 == length) x2 = 0;
+		}
+		cout << "ERROR: entire block is a repeat" << endl;
+		exit(1);
+	}
+	// 	//Advance to the first point of difference
+	// 	upA = advance(posA, posB, upA);
+	// 	
+	// 	//Determine if A is the winner
+	// 	bool ok = (compare(posA, posB, upA) == -1);
+	// 
+	// 	//If an advance occurred, count it and set the 'up' pointer of the loser
+	// 	if (upA > upB)
+	// 	{
+	// 		if (ok) { ups[posB] = upA; update_winners(posA, posB, upA); }
+	// 		else    { ups[posA] = upA; update_winners(posB, posA, upA); }
+	// 		// advances += (upA - upB);
+	// 	}
+	// 	
+	// 	//Return true if A is the winner
+	// 	return ok;
+	// }
+	
+	//Update the winners table. This table helps a lot with repeats.
+	//The table is only updated if the repeat is LONGER
+	void update_winners(int winner, int loser, int offset)
+	{
+		//return;
+		
+		for (int i=0; i<=offset; ++i)
+		{
+			if (winners[winner] == loser) return;
+			if (anchors[winner] > offset - i) return;
+			
+			winners[winner] = loser;
+			anchors[winner] = offset - i;
+			
+			if (++winner >= length) winner -= length;
+			if (++loser  >= length) loser  -= length;
+			
+			advances++;
+		}
+	}
+	
+	//Flush the queue (copy sorted element back into blocks)
+	void flush(int start, int size)
+	{
+		//Error check
+		if (copy.size() != size)
+		{
+			cout << "Queue size is not correct" << endl;
+			exit(1);
+		}
+		
+		//Flush the queue
+		for (int i=0; i<size; ++i)
+		{
+			blocks[start+i] = copy.front();
+			copy.pop();
+			//cout << "set:" << i << " to " << blocks[start+i] << endl;
+		}
+
+		//Reset the lead element to point to a blank (as the offset is unknown)
+		ups[blocks[start]] = -1;
+	}	
+		
+	// 
+	// //Merge two blocks together (offset is the first point of difference between the PARENT strings. It indicates repetitiveness)
+	// void merge_old(int start, int sizeA, int sizeB, int offset)
+	// {
+	// 	// if (++calls % 100000 == 0)
+	// 	// {
+	// 	// 	////cout << calls << "\r" << flush;
+	// 	// }
+	// 	// if (iteration >= 64)
+	// 	// {
+	// 	// 	if (calls == 958620)
+	// 	// 	{
+	// 	// 		dump(start, start+sizeA, start+sizeA+sizeB);
+	// 	// 	}
+	// 	// }
+	// 	
+	// 	int posA = start;
+	// 	int posB = start + sizeA;
+	// 	int size = sizeA + sizeB;
+	// 	int bin  = sizeA;
+	// 	
+	// 	cout<<endl;
+	// 	dump(posA, posB, posA+size-1);
+	// 
+	// 	////cout << "MERGE: " << start << ":" << posA << ":" << posB << endl;
+	// 	//Determine the dominant block
+	// 	
+	// 	//Find the offset between the first 2 elements
+	// 	int offset = advance(posA,posB,0);
+	// 	
+	// 	//Determine which if the fist 2 elements is better
+	// 	bool a_best = (compare(posA, posB, offset) == -1);
+	// 	
+	// 	//Set the initial offset for the elements
+	// 	ups[blocks[posA]] = (a_best) ? offset+1 : offset;
+	// 	ups[blocks[posB]] = (a_best) ? offset : offset+1;
+	// 	// if (a_best) { copy.push(blocks[posA]); posA++; sizeA--; ups[blocks[posB]] = offset; }
+	// 	// else        { copy.push(blocks[posB]); posB++; sizeB--; ups[blocks[posA]] = offset; }
+	// 	
+	// 	//Merge the two ranges into the queue
+	// 	for (int i=0; i<size; ++i)
+	// 	{
+	// 		//If a block is empty, flush the other and break
+	// 		if (sizeA == 0) { while(i<size) { copy.push(blocks[posB]); posB++; i++; } break; }
+	// 		if (sizeB == 0) { while(i<size) { copy.push(blocks[posA]); posA++; i++; } break; }
+	// 
+	// 		//Compare the offsets of the two elements
+	// 		int a = ups[blocks[posA]];
+	// 		int b = ups[blocks[posB]];
+	// 		
+	// 		//If they are different, queue the better one and continue
+	// 		if (a > b) { copy.push(blocks[posA]); posA++; sizeA--; continue; }
+	// 		if (a < b) { copy.push(blocks[posB]); posB++; sizeB--; continue; }
+	// 		
+	// 		//Compare the letters at the sticking point
+	// 		int cmp = compare(posA, posB, a);
+	// 		
+	// 		//If they are different, queue the better one and continue
+	// 		if (cmp < 0) { copy.push(blocks[posA]); posA++; sizeA--; continue; }
+	// 		if (cmp > 0) { copy.push(blocks[posB]); posB++; sizeB--; continue; }
+	// 		
+	// 		//If the blocks are bin-spaced and the block is before the anchor (limit of repetitiveness) SHORTCUT
+	// 		//if (blocks[posB] - blocks[posA] == bin)// && offset >= 2*sizeA)
+	// 		if (blocks[posB] - blocks[posA] == bin && blocks[posA] <= anchor)
+	// 		{
+	// 			shortcuts++;
+	// 			////cout << "shortcut" << endl;
+	// 			//Queue the dominant block and set the thread pointer for the submissive block (to the anchor)
+	// 			if (dominant) { copy.push(blocks[posA]); posA++; sizeA--; ups[blocks[posB]] = anchor - blocks[posA]; }
+	// 			else          { copy.push(blocks[posB]); posB++; sizeB--; ups[blocks[posA]] = anchor - blocks[posA]; }
+	// 		}
+	// 		//Otherwise, a forward lookup is required (worst case)
+	// 		else
+	// 		{
+	// 			//Advance to the first difference
+	// 			a = advance(posA, posB, a);
+	// 			//a = advance(posA, posB, 0);
+	// 			if (a != b) advances++;
+	// 			//cout << "bad" << (b-a) << endl;
+	// 
+	// 			//Queue the dominant block and update the thread pointer for the submissive block
+	// 			if (compare(posA, posB, a) == -1) { copy.push(blocks[posA]); posA++; sizeA--; ups[blocks[posB]] = a; }
+	// 			else                              { copy.push(blocks[posB]); posB++; sizeB--; ups[blocks[posA]] = a; }
+	// 		}
+	// 	}
+	// 	
+	// 	//Copy sorted elements back into the original vector
+	// 	for (int i=0; i<size; ++i)
+	// 	{
+	// 		if (copy.empty())
+	// 		{
+	// 			////cout << "LOGICAL ERROR: 1886" << endl;
+	// 		}
+	// 		blocks[start+i] = copy.front();
+	// 		//cout << "set:" << i << " to " << blocks[start+i] << endl;
+	// 		copy.pop();
+	// 	}
+	// 	
+	// 	//Reset the lead element to point to a blank (up offset is unknown)
+	// 	ups[blocks[start]] = -1;
+	// }
+	// 
+	// 
+	// //This merge can be done when the two blocks are absolutely identical (this happens when the 'b' anchor is in D or further)
+	// //--------------------a-------b------------------------------------
+	// //|   A   |   B   |   C   |   D   |   E   |   F   |   G   |   H   |
+	// //
+	// //It can be guaranteed that the first two elements are separated by 'bin' spacing
+	// void mergeIdentical(int start, int sizeA, int sizeB, int offset, bool a_best)
+	// {
+	// }	
+	// 
+	// //Merge two sub-blocks together (returns the offset of the first difference between the top two blocks)
+	// int merge2(int startA, int startB, int end, int offset)
+	// {
+	// 	if (++calls % 100000 == 0)
+	// 	{
+	// 		cout << calls << "\r" << flush;
+	// 	}
+	// 	if (iteration >= 64)
+	// 	{
+	// 		if (calls == 958620)
+	// 		{
+	// 			dump(startA, startB, end);
+	// 		}
+	// 	}
+	// 	cout<<endl;
+	// 	dump(startA, startB, end);
+	// 	
+	// 	int sizeA = startB - startA;
+	// 	int sizeB = end - startB + 1;
+	// 	int size  = end - startA + 1;
+	// 
+	// 	if (sizeA > size) sizeA = size;
+	// 	
+	// 	//No need to do anything in these cases
+	// 	if (size <= 1) return -1;
+	// 	if (sizeB <= 0) return -1;
+	// 	
+	// 	int posA = startA;
+	// 	int posB = startB;
+	// 	
+	// 	//Advance the offset to the point of first difference
+	// 	offset = advance(posA, posB, 0);//offset);
+	// 	
+	// 	cout << "MERGE: " << startA << ":" << posA << ":" << posB << endl;
+	// 	if (offset == -1)
+	// 	{
+	// 		cout << "\n" << "ERROR" << endl;
+	// 	}
+	// 	
+	// 	
+	// 	//Determine the better element
+	// 	bool a_best = compare(posA, posB, offset);
+	// 	bool repeat = offset >= sizeA;
+	// 	
+	// 	//Queue the better element and update the 'up' pointer for the worse element
+	// 	if (a_best) { copy.push(blocks[posA]); posA++; sizeA--; ups[blocks[posB]] = offset; }
+	// 	else        { copy.push(blocks[posB]); posB++; sizeB--; ups[blocks[posA]] = offset; }
+	// 	
+	// 	//Merge the two ranges into the queue
+	// 	for (int i=1; i<size; ++i)
+	// 	{
+	// 		//If a block is empty, flush the other and break
+	// 		if (sizeA == 0) { while(i<size) { copy.push(blocks[posB]); posB++; i++; } break; }
+	// 		if (sizeB == 0) { while(i<size) { copy.push(blocks[posA]); posA++; i++; } break; }
+	// 
+	// 		//Compare the offsets of the two elements
+	// 		int a = ups[blocks[posA]];
+	// 		int b = ups[blocks[posB]];
+	// 
+	// 		//If they are different, queue the better one and continue
+	// 		if (a < b) { copy.push(blocks[posB]); posB++; sizeB--; continue; }
+	// 		if (a > b) { copy.push(blocks[posA]); posA++; sizeA--; continue; }
+	// 
+	// 		//They have the same offset. If not a repeat then advance to find the first difference
+	// 		// if (!repeat)
+	// 		// {
+	// 			a = advance(posA, posB, b);
+	// 			if (a != b) advances++;
+	// 
+	// 			//Determine the better one
+	// 			a_best = compare(posA, posB, a);
+	// 			repeat = a >= sizeA;
+	// 		// } 
+	// 		
+	// 		//Queue the better one
+	// 		if (a_best) { copy.push(blocks[posA]); posA++; sizeA--; }
+	// 		else        { copy.push(blocks[posB]); posB++; sizeB--; }
+	// 		
+	// 		//If the offset didn't change, there is nothing more to do
+	// 		if (a == b) continue;
+	// 		
+	// 		//Set the 'up' value of the worse element
+	// 		if (a_best) ups[blocks[posB]] = a;
+	// 		else        ups[blocks[posA]] = a;
+	// 	}
+	// 	
+	// 	//Copy sorted elements back into the original vector
+	// 	for (int i=startA; i<=end; ++i)
+	// 	{
+	// 		if (copy.empty())
+	// 		{
+	// 			cout << "LOGICAL ERROR: 1886" << endl;
+	// 		}
+	// 		blocks[i] = copy.front();
+	// 		cout << "set:" << i << " to " << blocks[i] << endl;
+	// 		copy.pop();
+	// 	}
+	// 	
+	// 	//Return the offset difference between the first two elements
+	// 	return ups[blocks[startA+1]];
+	// }
+	// 	
+	// //If two merge blocks have been determined to be repeats, then quickly sort them
+	// void quick(int posA, int posB, int endA, int endB, int offset)
+	// {
+	// 	int sizeA = endA - posA + 1;
+	// 	int sizeB = endB - posB + 1;
+	// 	int size = sizeA + sizeB;
+	// 
+	// 	//Determine which is best
+	// 	bool a_best = compare(posA, posB, offset);
+	// 	
+	// 	//Push the better one to the stack
+	// 	if (a_best) { copy.push(blocks[posA]); posA++; sizeA--; }
+	// 	else        { copy.push(blocks[posB]); posB++; sizeB--; }
+	// 	
+	// 	//Merge the two ranges into the queue
+	// 	for (int i=1; i<size; ++i)
+	// 	{
+	// 		//If either block is empty, flush the other and break
+	// 		if (sizeA == 0) { while (i<size) { copy.push(blocks[posB]); posB++; i++; } break; }
+	// 		if (sizeB == 0) { while (i<size) { copy.push(blocks[posA]); posA++; i++; } break; }
+	// 
+	// 		//Check the offsets of the two elements
+	// 		int a = ups[blocks[posA]];
+	// 		int b = ups[blocks[posB]];
+	// 		
+	// 		//If the offsets are not the same then queue the better element
+	// 		if (a < b) { copy.push(blocks[posB]); posB++; sizeB--; continue; }
+	// 		if (a > b) { copy.push(blocks[posA]); posA++; sizeA--; continue; }
+	// 		
+	// 		//They have the same offset. The initial comparison dictates which is queued (this is the shortcut)
+	// 		//ERROR: MAKE SURE THAT THE CHARS ARE THE SAME AT THIS POINT. IF THEY ARE DIFFERENT, QUEUE THE BETTER ONE
+	// 		if (a_best) { copy.push(blocks[posA]); posA++; sizeA--; }
+	// 		else        { copy.push(blocks[posB]); posB++; sizeB--; }
+	// 	}
+	// }
 };
 
 //0 aaabaa
@@ -2031,3 +2377,218 @@ Walk through
 	if there is an uncached section, then it must be sorted on the next offset
 	when there is both a cached and uncached section, then they must be merged
 */
+
+
+
+
+
+/*
+
+:: SHORTCUT IN PARENT MERGE
+----a-------b----------------------------------------------------
+|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+A->a
+
+------------a-------b--------------------------------------------
+|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+A->a
+
+--------------------a-------b------------------------------------
+|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+A->a, C->a
+
+----------------------------a-------b----------------------------
+|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+A->a, C->a
+
+------------------------------------a-------b--------------------
+|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+A->a, C->a, E->a
+
+--------------------------------------------a-------b------------
+|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+A->a, C->a, E->a
+
+----------------------------------------------------a-------b----
+|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
+A->a, C->a, E->a, G->a				
+
+
+:: CROSS-THREAD ::
+------------X--------------------
+|	A	|	B	|	C	|	D	|
+
+- sequenceA != sequenceB
+- blocksA != blocksB
+- greatest offset always wins
+- same offset -> advance to first difference (can be slow)
+
+:: ANCHOR ::
+--------------------X------------
+|	A	|	B	|	C	|	D	|
+
+- sequenceA == sequenceB
+- blocksA != blocksB
+- cross-thread merge with a shortcut
+	- if blocks are spaced by 'bin' -> defer to dominant block
+	- otherwise advance
+
+:: FAST ANCHOR ::
+----------------------------X----
+|	A	|	B	|	C	|	D	|
+
+- sequenceA == sequenceB == sequenceC
+- blocksA == blocksB
+- same as above but faster as advance is never needed
+
+:: SORT ::
+{
+	for each n^2 iteration
+	{
+		if the lead indicator is marked
+		{
+			the first anchor is known
+		}
+		else
+		{
+			determine the first anchor
+		}
+
+		merge the blocks (start sizeA sizeB anchor)
+
+		if the anchor is inside the next bin
+		{
+			unmark the lead indicator
+		}
+		else
+		{
+			mark as many lead indicators downstream as possible
+		}
+	}
+}
+
+:: MERGE ::
+{
+	given ranges and anchor
+
+	determine the dominant block
+	set the 'up' values for the head elements
+
+	while there are items to merge
+	{
+		if A is empty, flush B and exit
+		if B is empty, flush A and exit
+	
+		get the 'up' values for the lead elements
+	
+		if the values are not equal
+		{
+			queue the greater one
+			continue
+		}
+	
+		if the blocks are bin-spaced and before the anchor
+		{
+			defer to the dominant block
+			queue the element from the dominant block
+			set the 'up' pointer for the other element to be the anchor
+			continue
+		}
+		
+		advance to the first difference
+		queue the better element
+		set the 'up' pointer of the other element to be the difference
+	}
+	
+	
+	
+	
+xxxxxxxx|oooxxxxx|xxxoooB	
+xxxxxxxo|oooxxxxx|xxxoooB
+xxxxxxoo|ooxxxxxx|xxoooB
+xxxxxooo|oxxxxxxx|xoooB
+xxxxooox|xxxxxxxx|oooB
+xxxoooxx|xxxxxxxo|ooB
+xxoooxxx|xxxxxxoo|oB
+xoooxxxx|xxxxxooo|B
+oooxxxxx|xxxxoooB|
+}
+
+13-aaatpalplantntan
+14-aatpalplantntana
+02-alplantntanaaatp
+11-anaaatpalplantnt
+06-antntanaaatpalpl
+15-atpalplantntanaa
+05-lantntanaaatpalp
+03-lplantntanaaatpa
+12-naaatpalplantnta
+09-ntanaaatpalplant
+07-ntntanaaatpalpla
+01-palplantntanaaat
+04-plantntanaaatpal
+10-tanaaatpalplantn
+08-tntanaaatpalplan
+00-tpalplantntanaaa
+
+30-alpplanttnalpptn
+24-alpptnalpplanttn
+19-anttnalpptnalppl
+18-lanttnalpptnalpp
+31-lpplanttnalpptna
+25-lpptnalpplanttna
+29-nalpplanttnalppt
+23-nalpptnalpplantt
+20-nttnalpptnalppla
+17-planttnalpptnalp
+16-pplanttnalpptnal
+26-pptnalpplanttnal
+27-ptnalpplanttnalp
+28-tnalpplanttnalpp
+22-tnalpptnalpplant
+21-ttnalpptnalpplan
+
+
+
+
+13-aaatpalplantntan
+14-aatpalplantntana
+02-alplantntanaaatp
+11-anaaatpalplantnt
+06-antntanaaatpalpl
+15-atpalplantntanaa
+05-lantntanaaatpalp
+03-lplantntanaaatpa
+12-naaatpalplantnta
+09-ntanaaatpalplant
+07-ntntanaaatpalpla
+01-palplantntanaaat
+04-plantntanaaatpal <-
+10-tanaaatpalplantn
+08-tntanaaatpalplan
+00-tpalplantntanaaa
+
+30-alpplanttnalpptn
+24-alpptnalpplanttn
+19-anttnalpptnalppl
+18-lanttnalpptnalpp
+31-lpplanttnalpptna
+25-lpptnalpplanttna
+29-nalpplanttnalppt
+23-nalpptnalpplantt
+20-nttnalpptnalppla
+17-planttnalpptnalp <-
+16-pplanttnalpptnal
+26-pptnalpplanttnal
+27-ptnalpplanttnalp
+28-tnalpplanttnalpp
+22-tnalpptnalpplant
+21-ttnalpptnalpplan
+
+
+
+
+
+*/
+
+
