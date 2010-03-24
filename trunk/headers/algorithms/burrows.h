@@ -131,7 +131,7 @@ struct BurrowsWheeler
 		//BlockSort sorter;
 		//BZSort sorter;
 		//CachedBlockSort sorter;
-		MergeBlockSort sorter;
+		CrossThreadSort sorter;
 		sorter.sort(str, blockstarts);		
 		//sort(blockstarts.begin(), blockstarts.end(), comparator);
 		
