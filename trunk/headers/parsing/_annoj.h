@@ -1,5 +1,4 @@
-#ifndef _READSLAM_READ_ANNOJ
-#define _READSLAM_READ_ANNOJ
+#pragma once
 
 #include "_nonslam.h"
 
@@ -71,4 +70,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

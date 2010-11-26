@@ -1,5 +1,4 @@
-#ifndef _READSLAM_INDEX
-#define _READSLAM_INDEX
+#pragma once
 
 #include "_dna.h"
 #include "_index.h"
@@ -13,7 +12,7 @@
  */
 namespace ReadSlam
 {
-	struct IndexVector
+	struct IndexVector : Index
 	{
 		//The index is a collection of vectors
 		vector<int> index;
@@ -224,4 +223,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

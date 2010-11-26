@@ -1,20 +1,27 @@
-#ifndef _READSLAM_TOOLS_PARSER
-#define _READSLAM_TOOLS_PARSER
+/**
+ * _parser.h
+ * 
+ * Routines for converting a file of reads into .slam format.
+ * Routines for converting a file of reads from .slam format.
+ *
+ */
+#pragma once
 
 #include "../common/_files.h"
+#include "../core/_read.h"
+
 #include "../parsing/_annoj.h"
 #include "../parsing/_bowtie.h"
 #include "../parsing/_fastq.h"
 #include "../parsing/_simple.h"
 #include "../parsing/_final.h"
-#include "../core/_read.h"
 
 namespace ReadSlam
 {
-	//Collection of routines designed to be used statically for parsing various read format files
+	//A collection of functions for converting the format of a file of deep-sequencing reads
 	struct Parser
 	{
-		//Single point entry for parsing
+		//Single point controller. Specify the conversion type.
 		static void parse(string type, string infile, string outfile)
 		{
 			if (type == "slam2raw")
@@ -59,7 +66,7 @@ namespace ReadSlam
 			}
 			else
 			{
-				cerr << "Unrecognized parse type: " << type << endl;
+				cerr << "Unrecognized conversion: " << type << endl;
 				exit(1);
 			}
 		}
@@ -237,4 +244,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

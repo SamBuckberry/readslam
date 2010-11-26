@@ -1,5 +1,4 @@
-#ifndef _READSLAM_GENOME
-#define _READSLAM_GENOME
+#pragma once
 
 #include "../common/_sysinfo.h"
 #include "_assembly.h"
@@ -440,4 +439,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

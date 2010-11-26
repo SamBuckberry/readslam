@@ -1,5 +1,4 @@
-#ifndef _READSLAM_GENOME
-#define _READSLAM_GENOME
+#pragma once
 
 #include "_index_vector.h"
 
@@ -85,4 +84,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

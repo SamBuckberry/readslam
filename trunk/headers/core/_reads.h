@@ -1,5 +1,4 @@
-#ifndef _READSLAM_READS
-#define _READSLAM_READS
+#pragma once
 
 #include "_common.h"
 #include "_sequence.h"
@@ -55,4 +54,3 @@ namespace ReadSlam
 	//build stacks
 	//
 }
-#endif

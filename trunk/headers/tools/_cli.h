@@ -1,5 +1,4 @@
-#ifndef _READSLAM_TOOLS_CLI
-#define _READSLAM_TOOLS_CLI
+#pragma once
 
 #include "_preprocess.h"
 #include "_parser.h"
@@ -45,5 +44,3 @@ namespace ReadSlam
 		}
 	};
 }
-
-#endif

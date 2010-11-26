@@ -1,5 +1,4 @@
-#ifndef _READSLAM_SEQUENCE
-#define _READSLAM_SEQUENCE
+#pragma once
 
 #include "_dna.h"
 #include <map>
@@ -153,4 +152,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif
