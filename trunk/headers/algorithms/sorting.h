@@ -3321,7 +3321,7 @@ struct BlockSort
 		block * z = _b(b->prev); assert(z != NULL); //tail element from AB
 		block * a = _b(z->next); //head element from group A
 		
-		cout << "Merging " << b->index << " into " << z->index << endl;
+		//cout << "Merging " << b->index << " into " << z->index << endl;
 		
 		assert(a != b);
 		
@@ -3340,7 +3340,7 @@ struct BlockSort
 					z->next = b->index;
 				}
 				remove(group);
-				cout << "Appended (null) " << b->index << endl;
+				//cout << "Appended (null) " << b->index << endl;
 				
 				return;
 			}
@@ -3350,7 +3350,7 @@ struct BlockSort
 			{
 				z->next = a->index;
 				remove(group);
-				cout << "Appended (null)" << a->index << endl;
+				//cout << "Appended (null)" << a->index << endl;
 				
 				return;
 			}
@@ -3360,7 +3360,7 @@ struct BlockSort
 			{
 				z->next = a->index;
 				replace(group,b);
-				cout << "Appended (abort)" << a->index << endl;
+				//cout << "Appended (abort)" << a->index << endl;
 				return;
 			}
 			
@@ -3400,7 +3400,7 @@ struct BlockSort
 				b = _b(b->next);
 				count_b++;
 			}
-			cout << "Appended " << z->index << endl;
+			//cout << "Appended " << z->index << endl;
 			cascade(z);
 		}
 		assert(false);
@@ -3467,7 +3467,7 @@ struct BlockSort
 			bks[i] = p->index;
 		}
 		
-		cout << "write it" << endl;
+		cout << "Finished" << endl;
 	}
 };
 
