@@ -1,0 +1,49 @@
+/*****************************************************************************
+
+	NOTE: do not modify or use this file directly, make a copy instead
+	NOTE: delete this comment section from from your copy
+	
+	Sample configuration file for running the entire pipeline in one go.
+	In here, you provide information about the source data (a single file
+	of reads from the sequencer), a working directory, and then choose
+	which components of the pipeline should be active and how they should
+	run. This file is used by the /bin/slam binary.
+	
+	Usage:
+	/path/to/readslam/bin/slam /path/to/config.json
+	
+*****************************************************************************/
+{
+	"run" : {
+		"title" : "Unique title for the run",
+		"about" : "Descriptive information about the run",
+		"directory" : "/absolute/path/to/working/directory/"
+	},
+	"genome" : {
+		"file" : "/absolute/path/to/genome.format",
+		"format" : "fasta"
+	},
+	"reads" : {
+		"bisulfite" : true,
+		"paired" : true,
+		"file" : "/absolute/path/to/reads.format",
+		"format" : "fastq"
+	},
+	"mapping" : {
+		"seed" : 12,
+		"multis" : false
+	},
+	"bowtie" : {
+		"binary" : "/absolute/path/to/bowtie/binary",
+		"seed" : 5,
+		"errors" : 9
+	},
+	"trimming" : {
+		"quality"  : 30,
+		"adapter"  : "AAATAGAGAGA",
+		"mismatch" : 2
+	},
+	"calling" : {
+		"pvalue" : 0.01
+	}
+}
