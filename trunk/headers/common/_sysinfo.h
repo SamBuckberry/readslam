@@ -1,5 +1,4 @@
-#ifndef _READSLAM_SYSINFO
-#define _READSLAM_SYSINFO
+#pragma once
 
 #include "_common.h"
 
@@ -13,7 +12,6 @@ namespace ReadSlam
 	{
 		int cpus;
 		int ram;
-		
 		
 		Sysinfo()
 		{
@@ -99,4 +97,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif
