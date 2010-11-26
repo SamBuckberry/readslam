@@ -1,5 +1,4 @@
-#ifndef _STRINGS
-#define _STRINGS
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -193,5 +192,3 @@ namespace Strings
 		return tally;
 	}
 }
-
-#endif
