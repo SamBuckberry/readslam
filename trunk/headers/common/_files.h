@@ -1,5 +1,4 @@
-#ifndef _FILES
-#define _FILES
+#pragma once
 
 #include <fstream>
 #include <string>
@@ -297,6 +296,27 @@ namespace Files
 		}
 		streams.clear();
 	}
+	
+	//Read all content in from file at once
+	static void slurp(string infile, string &s)
+	{
+		s.clear();
+		
+		ifstream in(infile.c_str());
+		string line = "";
+		
+		while (getline(in,line))
+		{
+			s += line;
+		}
+		in.close();
+	}
+	
+	//Dump a string to a file, overwriting if already present
+	static void dump(string outfile, string &s)
+	{
+		ofstream out(outfile.c_str());
+		out << s << endl;
+		out.close();
+	}
 }
-
-#endif
