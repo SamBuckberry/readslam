@@ -1,5 +1,4 @@
-#ifndef _READSLAM_READ_BOWTIE
-#define _READSLAM_READ_BOWTIE
+#pragma once
 
 #include "_nonslam.h"
 
@@ -167,4 +166,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

@@ -1,5 +1,4 @@
-#ifndef _READSLAM_READ
-#define _READSLAM_READ
+#pragma once
 
 #include <string>
 #include <fstream>
@@ -330,4 +329,3 @@ namespace ReadSlam
 		}		
 	};
 };
-#endif

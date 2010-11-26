@@ -1,5 +1,4 @@
-#ifndef _READSLAM_DNA
-#define _READSLAM_DNA
+#pragma once
 
 #include <string>
 #include <vector>
@@ -172,4 +171,3 @@ namespace DNA
 	}
 */
 }
-#endif

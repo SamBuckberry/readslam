@@ -128,10 +128,11 @@ struct BurrowsWheeler
 		comparator.seq = str;
 		comparator.len = length;
 		
-		//BlockSort sorter;
+		//BlockSortOld sorter;
 		//BZSort sorter;
 		//CachedBlockSort sorter;
-		CrossThreadSort sorter;
+		//CrossThreadSort sorter;
+		BlockSort sorter;
 		sorter.sort(str, blockstarts);		
 		//sort(blockstarts.begin(), blockstarts.end(), comparator);
 		

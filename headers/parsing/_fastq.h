@@ -1,5 +1,4 @@
-#ifndef _READSLAM_READ_FASTQ
-#define _READSLAM_READ_FASTQ
+#pragma once
 
 #include "_nonslam.h"
 
@@ -110,4 +109,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

@@ -1,5 +1,4 @@
-#ifndef _READSLAM_INDEX
-#define _READSLAM_INDEX
+#pragma once
 
 #include "_dna.h"
 #include "_index.h"
@@ -151,4 +150,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

@@ -1,11 +1,15 @@
-#ifndef _READSLAM_SPLITTER
-#define _READSLAM_SPLITTER
+#pragma once
 
 #include "../common/_common.h"
 #include "../parsing/_slam.h"
 #include "../core/_dna.h"
 #include "_fasta.h"
 #include <map>
+
+
+/**
+ NOTE: also see _preprocess.h for a trimming process
+*/
 
 /*
 
@@ -157,4 +161,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif

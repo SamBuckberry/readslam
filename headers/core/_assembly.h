@@ -1,5 +1,4 @@
-#ifndef _READSLAM_ASSEMBLY
-#define _READSLAM_ASSEMBLY
+#pragma once
 
 #include "_sequence.h"
 #include "_read.h"
@@ -13,7 +12,18 @@ namespace ReadSlam
 		
 		string name;
 		int length;
-	
+		
+		 Assembly() { clear(); }
+		~Assembly() { clear(); }
+
+		void clear()
+		{
+			forward.clear();
+			reverse.clear();
+			name.clear();
+			length = 0;
+		}
+			
 		void init(string name, string sequence)
 		{
 			this->name = name;
@@ -42,4 +52,3 @@ namespace ReadSlam
 		}
 	};
 }
-#endif
