@@ -1,32 +1,27 @@
+#pragma once
+
 #include "_files.h"
 #include "json/reader.h"
 #include "json/writer.h"
 #include "json/elements.h"
 
+using namespace json;
+
 namespace JSON
 {
 	//Load from file
-	static json::Object load(string filename)
+	static Object load(string filename)
 	{
 		ifstream in(filename.c_str());
-		json::Object obj;
-		json::Reader::Read(obj, in);
+		Object obj;
+		Reader::Read(obj, in);
 		return obj;
 	}
 	
 	//Write to file
-	static void save(json::Object obj, string filename)
+	static void save(Object obj, string filename)
 	{
 		ofstream out(filename.c_str());
-		json::Writer::Write(obj, out);
+		Writer::Write(obj, out);
 	}
 }
-
-int main()
-{
-	json::Object obj = JSON::load("/tmp/test1.json");
-	JSON::save(obj, "/tmp/test2.json");
-	return 0;
-}
-
-
