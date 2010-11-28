@@ -2435,7 +2435,7 @@ struct CrossThreadSort
 	int shortcuts;
 	
 	bool verbose;
-	
+		
 	//Initialize the object
 	void init(string &s, vector<int> &b)
 	{
@@ -2514,6 +2514,7 @@ struct CrossThreadSort
 		for (int bin=1; bin<length; bin*=2)
 		{
 			cout << "Sorting iteration: " << bin << endl;
+			
 			calls = 0; advances = 0; shortcuts = 0; iteration = bin;
 			
 			//Clear out the cache
@@ -3185,7 +3186,7 @@ struct BlockSort
 		length = s.size();
 		BLANK = length;
 		sequence = s.c_str();
-		
+				
 		blocks.resize(length);
 		flags.resize(length);
 		
@@ -3241,6 +3242,25 @@ struct BlockSort
 		old->gprev = BLANK;
 	}
 	
+	void dump(block * b)
+	{
+		//cout << b->index << ':' << b->gprev << ' ' << b->gnext << endl;
+	}
+	
+	void matrix()
+	{
+		block * p = gfirst;
+		
+		for (block * p = gfirst; p != NULL; p = _b(p->gnext))
+		{
+			for (block * q = p; q != NULL; q = _b(q->next))
+			{
+				//cout << q->index << ' ' << q->diff << endl;
+			}
+			//cout << endl;
+		}
+	}
+	
 	//Set the winner between two blocks. True if {a} wins.
 	bool resolve(block * a, block  * b)
 	{
@@ -3249,10 +3269,13 @@ struct BlockSort
 		assert(a != b);
 		assert(a->prev == b->prev);
 
-		//cout << "Comparing:" << a->index << " to " << b->index << endl;
-
+		//cout << "Compare " << a->index << '&' << b->index << '=';
+		
 		//Auto win to the bigger up pointer
-		if (a->diff != b->diff) return a->diff > b->diff;
+		if (a->diff != b->diff) {
+			//cout << ((a->diff > b->diff) ? a->index : b->index) << endl;
+			return a->diff > b->diff;
+		}
 
 		//Find the point of first difference
 		unsigned int p1 = a->index + a->diff;
@@ -3261,7 +3284,7 @@ struct BlockSort
 		if (p1 >= length) p1 -= length;
 		if (p2 >= length) p2 -= length;
 
-		for (int i=a->diff; i<length; ++i,++p1,++p2)
+		for (unsigned int i=a->diff; i<length; ++i,++p1,++p2)
 		{
 			if (p1 == length) p1 = 0;
 			if (p2 == length) p2 = 0;
@@ -3273,6 +3296,7 @@ struct BlockSort
 				b->diff = i;
 				b->prev = a->index;
 				flags[b->index] = true;
+				//cout << a->index << endl;
 				return true;
 			}
 			else
@@ -3280,11 +3304,13 @@ struct BlockSort
 				a->diff = i;
 				a->prev = b->index;
 				flags[a->index] = true;
+				//cout << b->index << endl;
 				return false;
 			}
 		}
 		
 		//Should not be possible to get here
+		cout << "Whole string is a repeat" << endl;
 		assert(false);
 	}
 	
@@ -3297,16 +3323,24 @@ struct BlockSort
 		//Unflag the block
 		flags[z->index] = false;
 		
-		assert(_b(z->prev) != NULL); //shouldn't be possible for a flagged block to point nowhere
-		unsigned int a = _b(z->prev)->index;
-		unsigned int b = z->index;
+		if (z->diff == 0) return;
 		
-		for (unsigned int i=z->diff; i>0; --i,++a,++b)
+		//assert(z->diff > 0);
+		assert(_b(z->prev) != NULL); //shouldn't be possible for a flagged block to point nowhere
+		unsigned int a = _b(z->prev)->index + 1;
+		unsigned int b = z->index + 1;
+		
+		//cout << "Cascading: " << a << '/' << b << ' ' << z->diff << endl;
+		
+		for (unsigned int i=z->diff - 1; i>0; --i,++a,++b)
 		{
 			if (a == length) a = 0;
 			if (b == length) b = 0;
 			
+			//cout << "Cascade compare: " << a << ' ' << b << endl;
+			
 			//Abort if a better placement is already known
+			//cout << "Diff: " << blocks[b].diff << " i: " << i << endl;
 			if (blocks[b].diff > i) break;
 			
 			blocks[b].diff = i;
@@ -3317,6 +3351,9 @@ struct BlockSort
 	//Merge group B into group A (A is defined by what B points to)
 	void merge(block * group, unsigned int bin)
 	{
+		assert(group != NULL);
+		assert(group->gprev != BLANK || group->gnext != BLANK);
+		
 		block * b = group;       assert(b != NULL); //head element from group B
 		block * z = _b(b->prev); assert(z != NULL); //tail element from AB
 		block * a = _b(z->next); //head element from group A
@@ -3337,10 +3374,16 @@ struct BlockSort
 				//Only update B if it's not empty
 				if (b != NULL)
 				{
+					//cout << "Empty A, append {b}: " << b->index << endl;
+					
 					z->next = b->index;
+					//assert(b->prev == z->index);
+				}
+				else
+				{
+					assert(z->next == BLANK);
 				}
 				remove(group);
-				//cout << "Appended (null) " << b->index << endl;
 				
 				return;
 			}
@@ -3348,25 +3391,28 @@ struct BlockSort
 			//Finish if B is empty (A can't be empty to get here)
 			if (b == NULL)
 			{
+				//cout << "Empty B, append {a}: " << a->index << endl;
 				z->next = a->index;
+				//assert(a->prev == z->index);
 				remove(group);
-				//cout << "Appended (null)" << a->index << endl;
 				
 				return;
 			}
 			
 			//Abort if the bin size is exceeded by either counter
-			if (count_a > bin || count_b > bin)
-			{
-				z->next = a->index;
-				replace(group,b);
-				//cout << "Appended (abort)" << a->index << endl;
-				return;
-			}
+			// if (count_a > bin || count_b > bin)
+			// {
+			// 	z->next = a->index;
+			// 	replace(group,b);
+			// 	//cout << "Appended (abort)" << a->index << endl;
+			// 	return;
+			// }
 			
 			//Splice if {a} has a crossed pointer
 			if (a->prev != z->index)
 			{
+				//cout << "Splice A: " << a->index << '>' << a->prev << endl;
+				
 				z->next = b->index;
 				z = _b(a->prev);
 				b = a;
@@ -3377,13 +3423,15 @@ struct BlockSort
 			//Splice if {b} has a crossed pointer
 			if (b->prev != z->index)
 			{
+				//cout << "Splice B: " << b->index << '>' << b->prev << endl;
 				z->next = a->index;
 				z = _b(b->prev);
 				a = _b(z->next);
 				assert(a != b);
 				continue;
 			}
-			
+			assert(a->prev == b->prev);
+
 			if (resolve(a,b))
 			{
 				z->next = a->index;
@@ -3401,7 +3449,8 @@ struct BlockSort
 				count_b++;
 			}
 			//cout << "Appended " << z->index << endl;
-			cascade(z);
+			//cout << "Calling to cascade with " << z->index << endl;
+			//cascade(z);
 		}
 		assert(false);
 	}
@@ -3423,12 +3472,13 @@ struct BlockSort
 		init(s);
 		
 		//No need to do anything if all characters are the same
-		if (mono()) return;
+		//if (mono()) return;
 		
 		//For each n^2 iteration
 		for (int bin=1; bin<length; bin*=2)
 		{
 			cout << "Sorting iteration: " << bin << endl;
+			//matrix();
 			
 			block * node = NULL;
 			block * next = NULL;
@@ -3436,23 +3486,46 @@ struct BlockSort
 						
 			for (node = gfirst; node != NULL; node = next)
 			{
+				//assert(node->gnext != BLANK || node->gprev != BLANK);
 				next = _b(node->gnext);
+				//cout << "GROUP IS: " << node->index << " NEXT IS: " << ((next == NULL) ? -1 : next->index) << endl;
 				
 				//Merge immediately if there is a trace (not an orphan)
 				if (node->prev != BLANK)
 				{
+					assert(node->gnext != BLANK || node->gprev != BLANK);
+					//cout << "PROBLEM Immediate merge: " << node->index << endl;
 					merge(node,bin);
 				}
 				//Put the group on hold if possible (orphan)
 				else if (hold == NULL)
 				{
+					// if (gfirst->gnext == BLANK)
+					// {
+					// 	assert(false);
+					// }
+					// assert(node->gnext != BLANK || node->gprev != BLANK);
+					//cout << "Placed on hold: " << node->index << endl;
 					hold = node;
 				}
 				//Find the winner of two orphans and merge
 				else
 				{
-					merge(resolve(hold,node) ? node : hold, bin);
-					hold = NULL;
+					assert(node->gnext != BLANK || node->gprev != BLANK);
+					assert(hold->gnext != BLANK || hold->gprev != BLANK);
+					//dump(hold);dump(node);
+
+					//cout << "Pair of orphans: " << hold->index << '&' << node->index << endl;
+					//Catch a condition where cascade has given the held group a parent
+					if (hold->prev != node->prev)
+					{
+						hold = node;
+					}
+					else
+					{
+						merge(resolve(hold,node) ? node : hold, bin);
+						hold = NULL;
+					}
 				}
 			}
 		}
