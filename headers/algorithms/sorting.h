@@ -1631,1480 +1631,6 @@ struct CachedBlockSort
 */
 
 
-// /**
-//  * Basically a merge-sort that uses tail end recursion
-//  * 'Up' pointers are used to mark diagonal threads and accelerate the merge step
-//  */
-// struct CrossThreadSort
-// {
-// 	string sequence;
-// 	int length;
-// 	queue<int> copy;
-// 	vector<int> blocks;
-// 	vector<int> ups;
-// 	vector<int> winners;
-// 	vector<int> anchors;
-// 	
-// 	int calls;
-// 	int advances;
-// 	int iteration;
-// 	int shortcuts;
-// 	
-// 	bool verbose;
-// 	
-// 	//Initialize the object
-// 	void init(string &s, vector<int> &b)
-// 	{
-// 		verbose = false;
-// 		
-// 		blocks   = b;
-// 		sequence = s;
-// 		length   = s.size();
-// 
-// 		blocks.clear();
-// 		blocks.resize(length);
-// 		
-// 		ups.clear();
-// 		ups.resize(length);
-// 		
-// 		winners.clear();
-// 		winners.resize(length);
-// 		
-// 		anchors.clear();
-// 		anchors.resize(length);
-// 		
-// 		calls = 0;
-// 		advances = 0;
-// 		
-// 		//Initialize the blocks
-// 		for (int i=0; i<length; ++i)
-// 		{
-// 			blocks[i] = i;
-// 			ups[i] = -1;
-// 			winners[i] = -1;
-// 			anchors[i] = -1;
-// 		}
-// 	}	
-// 	
-// 	//Print out the stacks to the screen
-// 	void dump(int x1, int x2, int end)
-// 	{
-// 		int len = (length > 80) ? 80 : length;
-// 		
-// 		for (int i=x1; i<x2; ++i)
-// 		{
-// 			cout << blocks[i] << " : " << ups[blocks[i]] << " : ";
-// 			for (int j=0; j<len; ++j)
-// 			{
-// 				int p = blocks[i] + j; if (p >= length) p -= length;
-// 				cout << sequence[p];
-// 			}
-// 			cout << endl;
-// 		}
-// 		cout << "-------------------" << endl;
-// 		for (int i=x2; i<=end; ++i)
-// 		{
-// 			cout << blocks[i] << " : " << ups[blocks[i]] << " : ";
-// 			for (int j=0; j<len; ++j)
-// 			{
-// 				int p = blocks[i] + j; if (p >= length) p -= length;
-// 				cout << sequence[p];
-// 			}
-// 			cout << endl;
-// 		}
-// 	}
-// 	
-// 	//Compare two blocks (specified by string position) at a specific offset for ordering
-// 	int compare(int x1, int x2, int offset)
-// 	{
-// 		x1 += offset; if (x1 >= length) x1 -= length;
-// 		x2 += offset; if (x2 >= length) x2 -= length;
-// 		
-// 		if      (sequence[x1] < sequence[x2]) return -1;
-// 		else if (sequence[x1] > sequence[x2]) return  1;
-// 		else                                  return  0;
-// 	}
-// 	
-// 	//Find the first point of difference (starting from an offset) between two blocks (specified by block start positions)
-// 	int differ(int x1, int x2, int offset)
-// 	{
-// 		x1 += offset; if (x1 >= length) x1 -= length;
-// 		x2 += offset; if (x2 >= length) x2 -= length;
-// 	
-// 		while (offset < length)
-// 		{
-// 			if (sequence[x1] != sequence[x2]) return offset;
-// 			
-// 			if (++x1 == length) x1 = 0;
-// 			if (++x2 == length) x2 = 0;
-// 			
-// 			offset++;
-// 		}
-// 		cout << "ERROR, entire block is a repeat" << endl;
-// 		return -1;
-// 	}
-// 	
-// 	//Merge sort the blocks
-// 	void sort(string &s, vector<int> &b)
-// 	{
-// 		//Initialize
-// 		init(s,b);
-// 		
-// 		//For each n^2 iteration
-// 		for (int bin=1; bin<length; bin*=2)
-// 		{
-// 			cout << "Sorting iteration: " << bin << endl;
-// 			calls = 0; advances = 0; shortcuts = 0; iteration = bin;
-// 			
-// 			//Clear out the winners table
-// 			for (int i=0; i<length; ++i)
-// 			{
-// 				winners[i] = -1;
-// 				anchors[i] = -1;
-// 			}
-// 			
-// 			//Merge each pair of bins
-// 			for (int start=0; start<length; start+=2*bin)
-// 			{
-// 				//Determine the sizes of the two bins
-// 				int sizeA = bin;
-// 				int sizeB = bin;
-// 				
-// 				//Adjust bin B if necessary
-// 				if (start + 2*bin > length)
-// 				{
-// 					sizeB = length - (start + bin);
-// 					
-// 					//No merge necessary if B is empty. Remember to reset the flag (this is the odd bin at the end)
-// 					if (sizeB <= 0)
-// 					{
-// 						ups[blocks[start]] = -1;
-// 						continue;
-// 					}
-// 				}
-// 				
-// 				//Check if the lead indicator is set
-// 				int firstdiff = ups[blocks[start]];
-// 				
-// 				//Determine the point of first difference if required
-// 				if (firstdiff == -1)
-// 				{
-// 					//Find the first point of difference between the parent sequences of the squares
-// 					firstdiff = differ(start, start+bin, 0);
-// 				
-// 					//Set as many 'up' pointers as possible for this iteration (downstream)
-// 					for (int i=0; i<=firstdiff; i+=2*bin)
-// 					{
-// 						if (start+i >= length) break;
-// 						ups[blocks[start+i]] = firstdiff - i;
-// 					}
-// 				}
-// 				
-// 				//Set this offset as the 'up' pointer for the lead blocks
-// 				ups[blocks[start]]     = firstdiff;
-// 				ups[blocks[start+bin]] = firstdiff;
-// 				
-// 				if (verbose)
-// 				{
-// 					cout << "MERGE: " << iteration << "[" << start << "," << (start+bin) << "][" << sizeA << "," << sizeB << "]" << endl;
-// 					dump(start, start+bin, start+(sizeA+sizeB)-1);
-// 				}
-// 
-// 				//Merge the blocks taking a shortcut if possible
-// 				if (firstdiff < bin)
-// 				{
-// 					//Bin sequence is not identical. Squares are not identical
-// 					merge(start, sizeA, sizeB);
-// 				}
-// 				else if (firstdiff < 3*bin)
-// 				{
-// 					//Bin sequence is identical. Squares are not identical
-// 					merge(start, sizeA, sizeB);
-// 					// merge(start, sizeA, sizeB, offset);
-// 				}
-// 				else 
-// 				{
-// 					//Bin sequence is identical. Squares are identical
-// 					merge(start, sizeA, sizeB);
-// 					if (verbose) cout << "quick" << endl;
-// 					
-// 					//quickmerge(start, sizeA, sizeB, firstdiff);
-// 				}
-// 
-// 				//Flush the merge queue
-// 				flush(start,sizeA+sizeB);
-// 				
-// 				
-// 				//Mark the current lead indicator for NEXT iteration if possible
-// 				if (firstdiff >= 2*bin)
-// 				{
-// 					ups[blocks[start]] = firstdiff;
-// 				}
-// 
-// 				// :: SHORTCUT IN PARENT MERGE
-// 				// ----a-------b----------------------------------------------------
-// 				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-// 				// A->a
-// 				// 
-// 				// ------------a-------b--------------------------------------------
-// 				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-// 				// A->a
-// 				// 
-// 				// --------------------a-------b------------------------------------
-// 				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-// 				// A->a, C->a
-// 				// 
-// 				// ----------------------------a-------b----------------------------
-// 				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-// 				// A->a, C->a
-// 				// 
-// 				// ------------------------------------a-------b--------------------
-// 				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-// 				// A->a, C->a, E->a
-// 				// 
-// 				// --------------------------------------------a-------b------------
-// 				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-// 				// A->a, C->a, E->a
-// 				// 
-// 				// ----------------------------------------------------a-------b----
-// 				// |	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-// 				// A->a, C->a, E->a, G->a
-// 			}
-// 			cout << "Calls:" << calls << " Advances:" << advances << " Shortcuts: " << shortcuts << endl;
-// 		}
-// 
-// 		//Set the sorted blocks
-// 		b = blocks;
-// 	}
-// 	
-// 	//This merge can be used when both SQUARES are identical (A==B==C)
-// 	void quickmerge(int start, int sizeA, int sizeB, int offset)
-// 	{
-// 		int posA  = start;
-// 		int posB  = start + sizeA;
-// 		int bin   = sizeA;
-// 		int size  = sizeA + sizeB;
-// 		
-// 		//Determine the best element
-// 		bool abest = (compare(start, start+bin, offset) == -1);
-// 		
-// 		//Merge the two ranges into the queue
-// 		for (int i=0; i<size; ++i)
-// 		{
-// 			//If a block is empty, flush the other and break
-// 			if (sizeA == 0) { while (i<size) { copy.push(blocks[posB]); posB++; i++; } break; }
-// 			if (sizeB == 0) { while (i<size) { copy.push(blocks[posA]); posA++; i++; } break; }
-// 
-// 			//Get the blocks and their 'up' pointers
-// 			int blockA = blocks[posA];
-// 			int blockB = blocks[posB];
-// 			int upA = ups[blockA];
-// 			int upB = ups[blockB];
-// 			
-// 			//If one of the offsets is longer then it's an instant win
-// 			if (upA > upB) { copy.push(blockA); posA++; sizeA--; continue; }
-// 			if (upB > upA) { copy.push(blockB); posB++; sizeB--; continue; }
-// 
-// 			//Sanity check
-// 			if (posB - posA == bin)
-// 			{
-// 				//The winner is known from the start
-// 				if (abest) { copy.push(blockA); ups[blockB] = offset - (blockB - (start+bin)); posA++; sizeA--; }
-// 				else       { copy.push(blockB); ups[blockA] = offset - (blockA - start);       posB++; sizeB--; }
-// 			}
-// 			else
-// 			{
-// 				cout << "ERROR: this situation should be impossible" << endl;
-// 			}
-// 		}
-// 	}
-// 	
-// 	//The crossthread-merge approach. Sorts based on offsets. Reliable, but slow due to forward lookups when offsets match.
-// 	void merge(int start, int sizeA, int sizeB)
-// 	{
-// 		int posA = start;
-// 		int posB = start + sizeA;
-// 		int size = sizeA + sizeB;
-// 		int bin  = sizeA;
-// 
-// 		//Set the initial offset for the elements: FIXME <- this can be set externally
-// 		ups[blocks[posA]] = 0;
-// 		ups[blocks[posB]] = 0;
-// 		
-// 		//Merge the two ranges into the queue
-// 		for (int i=0; i<size; ++i)
-// 		{
-// 			//If a block is empty, flush the other and break
-// 			if (sizeA == 0) { while (i<size) { copy.push(blocks[posB]); posB++; i++; } break; }
-// 			if (sizeB == 0) { while (i<size) { copy.push(blocks[posA]); posA++; i++; } break; }
-// 			
-// 			//Link a pair by setting the 'up' pointer of the lesser element
-// 			bool aWins = link(blocks[posA], blocks[posB]);
-// 			
-// 			//Queue the better element
-// 			if (aWins) { copy.push(blocks[posA]); posA++; sizeA--; }
-// 			else       { copy.push(blocks[posB]); posB++; sizeB--; }
-// 		}
-// 	}
-// 	
-// 	//Compare two blocks to determine order and link the lower to the upper. Returns true if the upper is A, false if it's B
-// 	bool link(int blockA, int blockB)
-// 	{
-// 		//Copy the offset pointers
-// 		int a = ups[blockA];
-// 		int b = ups[blockB];
-// 		
-// 		//Instant winner if the offsets are different
-// 		if (a != b) return a > b;
-// 		
-// 		//Convert relative offsets to absolute positions
-// 		a += blockA; if (a >= length) a -= length;
-// 		b += blockB; if (b >= length) b -= length;
-// 		
-// 		//Advance to find the first point of difference
-// 		for (int offset=ups[blockA]; offset<length; ++offset)
-// 		{
-// 			//Resolution provided when the characters differ
-// 			// if (sequence[a] < sequence[b]) { ups[blockB] = offset; update_winners(blockA,blockB,offset); return true;  }
-// 			// if (sequence[b] < sequence[a]) { ups[blockA] = offset; update_winners(blockB,blockA,offset); return false; }
-// 			if (sequence[a] < sequence[b]) { update(blockA, blockB, offset); return true;  }
-// 			if (sequence[b] < sequence[a]) { update(blockB, blockA, offset); return false; }
-// 
-// 			//Winners table can provide a shortcut
-// 			//if (winners[a] == b) { ups[blockB] = offset + anchors[a]; update_winners(blockA,blockB,offset); return true;  }
-// 			//if (winners[b] == a) { ups[blockA] = offset + anchors[b]; update_winners(blockB,blockA,offset); return false; }
-// 			if (winners[a] == b) { update(blockA, blockB, offset+anchors[a]); return true;  }
-// 			if (winners[b] == a) { update(blockB, blockA, offset+anchors[b]); return false; }
-// 
-// 			if (++a == length) a = 0;
-// 			if (++b == length) b = 0;
-// 			
-// 			advances++;
-// 		}
-// 		cout << "ERROR: entire block is a repeat" << endl;
-// 		exit(1);
-// 	}
-// 	
-// 	//Update link information between two blocks and any nearby blocks that are effected
-// 	void update(int winner, int loser, int offset)
-// 	{
-// 		//Set the link
-// 		ups[loser] = offset;
-// 		
-// 		int start = winner;
-// 		int end = winner + offset;
-// 		
-// 		//Update other entries in this range
-// 		for (int i=0; i<=offset; ++i)
-// 		{
-// 			if (winners[winner] == loser) return;
-// 			//if (anchors[winner] > offset - i) return;
-// 			
-// 			winners[winner] = loser;
-// 			anchors[winner] = offset - i;
-// 			
-// 			if (++winner >= length) winner -= length;
-// 			if (++loser  >= length) loser  -= length;
-// 			
-// 			advances++;
-// 		}
-// 	}
-// 	
-// 	//Flush the queue (copy sorted element back into blocks)
-// 	void flush(int start, int size)
-// 	{
-// 		//Error check
-// 		if (copy.size() != size)
-// 		{
-// 			cout << "Queue size is not correct" << endl;
-// 			exit(1);
-// 		}
-// 		
-// 		//Flush the queue
-// 		for (int i=0; i<size; ++i)
-// 		{
-// 			blocks[start+i] = copy.front();
-// 			copy.pop();
-// 			if (verbose) cout << "set:" << i << " to " << blocks[start+i] << endl;
-// 		}
-// 
-// 		//Reset the lead element to point to a blank (as the offset is unknown)
-// 		ups[blocks[start]] = -1;
-// 	}
-// };
-	
-	
-/*
-:: IDEAS ::
-- use a vector instead of a queue
-	- the vector is full length
-	- the index is the stringpos
-	- the value is the order in the queue
-	- each iteration, it is reset to -1
-	- values are set as A and B are merged (pushed onto the queue)
-	- flushing the queue means random access operations (easy enough)
-	
-- on an advance operation, during downstream character matching...
-	- a block is flagged as 'placed' if the queue value != -1 (could also use a bool flag list)
-	- the two positions may be either flagged or not
-	
-	:: GOOD SHORTCUT ::
-	- if the offset char being looked at is < first character of block then both MUST have been cached
-	- in other words, all the 'a' blocks MUST have been cached before the 'b' are, so if the char is 'a' you KNOW they are both flagged
-	- if the offset char is > first char then the two blocks CANNOT have been cached
-	- if the offset char is == first char then any combination is possible
-	- cached,uncached OR uncached,cached is ONLY possible when the offset char == first char
-	
-	:: FLAGGED, FLAGGED ::
-	- this MUST occur whenever the match character is < the start character
-	- the block with the better queue position is the winner
-	- because, effectively, these two blocks have been compared before (cached) then the offset is easy to determine :-)
-	- this situation MAY occur when the match character == the start character
-	
-	:: FLAGGED, RAW or RAW, FLAGGED ::
-	- this situation can ONLY occur when the match character == the start character
-	- the winner is KNOWN, it must be the element that is already cached (that element MUST be better)
-	- but how do we determine the up pointer for the loser (exactly)???
-	- the up pointer for the loser MUST be somewhere between the current position and the up 
-	  pointer for the winner (known from the 'up' pointer of the cached element)
-	- because the cached element is the winner, it is KNOWN that the entire dominant block MUST contain winners up to that point
-		- because all elements are winners in the dominant block, none need their up values adjusted
-		- all values in the recessive block will need their offsets left alone or adjusted up
-		- the offset can be skipped forward by looking at the cached element and tracing down the cache to the end
-		- it is KNOWN that the FLAGGED/RAW situation can ONLY occur when the current offset char is the same as the parent char
-		- the offset adjustment for the loser CANNOT be greater than the final element in the current cache
-		- knowing that is not especially helpful because the first point of difference must still be found
-		- continue to read forward to the first point of difference (or the first FLAG,FLAG situation provides the point of difference)
-		- now adjust the offset pointers of ALL the losing elements up to that block (there can't be any winners (not possible))
-		- it is safe to adjust those pointers because none have been cached yet
-		- an offset pointer can be advanced, but it can never be reduced
-	
-	:: UNFLAGGED, UNFLAGGED ::
-	- this MUST occur whenever the match character is > the start character
-	- it is not possible to know which is better without advancing
-	- keep advancing until the first difference is known (from actual difference or FLAG/FLAG situation)
-
-- the winner does not need its 'up' value adjusted
-- the loser needs its up value adjusted to the first point of difference with the winner, HOW?	
-- is there a possible shortcut to allow this to happen quickly? (is there actually any need?)
-- up pointers can stay the same, or they can advance, they can NEVER decrease
-- for a flagged entry, we know that the up position is final and refers to the preceding queue item	
-
-- so there is no need for a special block search? Seems that way
-- need to be able to look up the cache position of an element. The cache must be cleared between iterations (-1s)
-- any single long offset match operation will result in the elements along the way being updated
-- there is no need to consult the parent element
-
-*/
-
-//Represents a block in a Burrows-Wheeler transformation
-/*
-struct Block
-{
-	int a; //first possible position of the block
-	int b; //last possible position of the block
-	int i; //the original string index of the block
-	int u; //offset from the start of the block to the first point of difference to the preceding block
-};
-
-//Sort blocks using ranges
-struct BlockSortWithRanges
-{
-	string sequence;
-	int length;
-	queue<int> copy;
-	vector<int> blocks;
-	vector<int> ups;
-	vector<int> cache;
-	
-	vector<int> block2pos;
-	vector<int> pos2block;
-	
-	//Initialize the object
-	void init(string &s, vector<int> &b)
-	{
-		blocks   = b;
-		sequence = s;
-		length   = s.size();
-
-		blocks.clear();
-		blocks.resize(length);
-		
-		ups.clear();
-		ups.resize(length);
-		
-		cache.clear();
-		cache.resize(length);
-		
-		block2pos.clear();
-		block2pos.resize(length);
-		
-		pos2block.clear();
-		pos2block.resize(length);
-		
-		//Initialize the blocks
-		for (int i=0; i<length; ++i)
-		{
-			blocks[i].a = 0;
-			blocks[i].b = length - 1;
-			blocks[i].i = i;
-			blocks[i].u = -1;
-			
-			//ups[i] = 0;
-			//cache[i] = -1;
-			//block2pos[i] = -1;
-			//pos2block[i] = -1;
-		}
-	}
-	
-	//Clear out the cache
-		
-	//Merge sort the blocks
-	void sort(string &s, vector<int> &b)
-	{
-		//Initialize
-		init(s,b);
-		
-		//For each n^2 iteration
-		for (int bin=1; bin<length; bin*=2)
-		{
-			cout << "Sorting iteration: " << bin << endl;
-			
-			//Clear out the cache
-			for (int i=0; i<length; ++i)
-			{
-				cache[i] = -1;
-				block2pos[i] = -1;
-				pos2block[i] = -1;
-			}
-			
-			//Merge each pair of bins
-			for (int start=0; start<length-bin; start+=2*bin)
-			{
-				//Determine the sizes of the two bins
-				int sizeA = bin;
-				int sizeB = bin;
-				
-				//Adjust bin B if necessary
-				if (start + 2*bin > length)
-				{
-					sizeB = length - (start + bin);
-					
-					//Sanity check
-					if (sizeB < 0) {cout << "ERROR: this case should not be possible" << endl;exit(1);}
-				}
-				
-				//Merge the two sets of blocks
-				merge(start, sizeA, sizeB);
-			}
-		}
-
-		//Set the sorted blocks
-		b = blocks;
-	}
-	
-	//The crossthread-merge approach. Sorts based on offsets using the cache to take shortcuts where possible
-	void merge(int start, int sizeA, int sizeB)
-	{
-		int posA = start;
-		int posB = start + sizeA;
-		int size = sizeA + sizeB;
-		int bin  = sizeA;
-		int end  = start + size;
-		
-		ups[blocks[posA]] = 0;
-		ups[blocks[posB]] = 0;
-		
-		//Merge the two ranges into the queue
-		for (int i=start; i<end; ++i)
-		{
-			//If a block is empty, flush the other and break
-			// if (sizeA == 0) { while (i<end) { cache[blocks[posB]] = i; posB++; i++; } break; }
-			// if (sizeB == 0) { while (i<end) { cache[blocks[posA]] = i; posA++; i++; } break; }
-			if (sizeA == 0) { while (i<end) { block2pos[blocks[posB]] = i; pos2block[i] = blocks[posB]; posB++; i++; } break; }
-			if (sizeB == 0) { while (i<end) { block2pos[blocks[posA]] = i; pos2block[i] = blocks[posA]; posA++; i++; } break; }
-			
-			//Link a pair by setting the 'up' pointer of the lesser element
-			bool aWins = link(blocks[posA], blocks[posB], i-1);
-			
-			//Queue the better element
-			// if (aWins) { cache[blocks[posA]] = i; posA++; sizeA--; }
-			// else       { cache[blocks[posB]] = i; posB++; sizeB--; }
-			if (aWins) { block2pos[blocks[posA]] = i; pos2block[i] = blocks[posA]; posA++; sizeA--; }
-			else       { block2pos[blocks[posB]] = i; pos2block[i] = blocks[posB]; posB++; sizeB--; }
-		}
-		
-		//Flush the cache (copy sorted element back into blocks)
-		for (int i=start; i<end; ++i)
-		{
-			// blocks[cache[i]] = i;
-			// if (verbose) cout << "set:" << i << " to " << cache[i] << endl;
-			blocks[i] = pos2block[i];
-			if (verbose) cout << "set:" << i << " to " << blocks[i] << endl;
-		}		
-	}
-	
-	//Compare two blocks to determine order and link the lower to the upper. Returns true if the upper is A, false if it's B
-	bool link(int blockA, int blockB, int lastcache)
-	{
-		//Copy the offset pointers
-		int a = ups[blockA];
-		int b = ups[blockB];
-		
-		//Instant winner if the offsets are different
-		if (a != b) return a > b;
-		
-		//Convert relative offsets to absolute positions
-		a += blockA; if (a >= length) a -= length;
-		b += blockB; if (b >= length) b -= length;
-		
-		//Advance to find the first point of difference
-		for (int offset=ups[blockA]; offset<length; ++offset)
-		{			
-			//Winner known if the characters are different
-			if (sequence[a] < sequence[b]) { update(blockB, offset); return true;  }
-			if (sequence[b] < sequence[a]) { update(blockA, offset); return false; }
-			
-			//Winner known if both blocks are cached (have to trace up through the pointers to find the offset)
-			// if (cache[a] >= 0 && cache[b] >= 0)
-			// {
-			// 	if (cache[a] < cache[b]) { update(blockB, offset + ups[b]); return true;  }
-			// 	if (cache[b] < cache[a]) { update(blockA, offset + ups[a]); return false; }
-			// 	cout << "ERROR0" << endl; exit(1);
-			// }
-			int cacheA = block2pos[a];
-			int cacheB = block2pos[b];
-			
-			if (cacheA != -1 || cacheB != -1)
-			{
-				if (cacheA != -1 && cacheB != -1)
-				{
-					if (cacheA < cacheB) { update(blockB, offset + trace(cacheA,cacheB)); cout << '.'; return true;  }
-					if (cacheB < cacheA) { update(blockA, offset + trace(cacheB,cacheA)); cout << '.'; return false; }
-					cout << "ERROR: cache values cannot be the same" << endl;exit(1);
-				}
-				//if (cacheA >= 0 && cacheA < lastcache) { update(blockB, offset + trace(cacheA,lastcache)); cout << '.'; return true; }
-				//if (cacheB >= 0 && cacheB < lastcache) { update(blockA, offset + trace(cacheB,lastcache)); cout << '.'; return false; }
-			}
-			
-			//Advance to the next position
-			if (++a == length) a = 0;
-			if (++b == length) b = 0;
-			advances++;
-		}
-		cout << "ERROR: entire block is a repeat" << endl;
-		exit(1);
-	}
-	
-	//Trace finds the minimum offset ('up' pointer) between two cached elements from b (lower) to a (upper)
-	//That minimum offset is guaranteed to be the first point of difference between the two blocks
-	int trace(int cacheA, int cacheB)
-	{
-		if (cacheB <= cacheA) {cout << "Logical error " << cacheA << " " << cacheB << endl; exit(1); }
-		int best = length;
-		
-		for (int i=cacheB; i>cacheA; --i)
-		{
-			int offset = ups[pos2block[i]];
-			if (offset == 1) return 1;
-			if (offset < best) best = offset;
-		}
-		return best;
-	}
-	
-	//Adjust the offset pointers of all losing blocks up to the offset.
-	//The process can stop when an equal offset is found
-	//Offset pointers can be advanced but never reduced
-	void update(int start, int offset)
-	{
-		cout << "Update loser: " << start << " " << offset << endl;
-		
-		ups[start] = offset;
-		return;
-		
-		for (int i=0; i<offset; ++i)
-		{
-			//Sanity check (cannot have been cached)
-			// if (cache[start] >= 0)
-			// {
-			// 	cout << "strlen" << sequence.size() << " cachelen" << cache.size() << endl;
-			// 	
-			// 	for (int j=0; j<sequence.size(); ++j)
-			// 	{
-			// 		cout << j << " " << sequence[j] << endl;
-			// 	}
-			// 	cout << "start and offset " << start << " " << offset << " " << (start+i) << ": ERROR3" << endl; exit(3);
-			// }
-			
-			//No need to do anything further if the offset is already optimal
-			if (offset-i <= ups[start]) break;
-
-			//Set the up pointer
-			//ups[start] = offset-i;
-			
-			//Move to the next position
-			if (++start == length) start = 0;
-		}
-	}
-	
-	//When merging two blocks, they first need to be compared to find the dominant one
-	
-	//Find the first difference point between two blocks (specified by index) starting from a specified offset
-	int firstdiff(int a, int b, int offset)
-	{
-		//Advance to the offset
-		a += offset;
-		b += offset;
-		
-		if (a >= length) a -= length;
-		if (b >= length) b -= length;
-
-		//Advance to find the first point of difference
-		for (int i=0; i<length-offset; ++i)
-		{			
-			//Finished if the characters are different
-			if (sequence[a] != sequence[b]) return offset + i;
-			
-			//Advance to the next position
-			if (++a == length) a = 0;
-			if (++b == length) b = 0;
-		}
-		return length;
-	}
-	
-	//Given two blocks and an offset, determine which block is dominant at that point (-1,0,1)
-	int order(int a, int b, int offset)
-	{
-		a += offset;
-		b += offset;
-		
-		if (a >= length) a -= length;
-		if (b >= length) b -= length;
-		
-		if (sequence[a] < sequence[b]) return -1;
-		if (sequence[a] > sequence[b]) return  1;
-		
-		return 0;
-	}
-	
-	//The first pass of the sequence should look for single character repeats and collapse them
-	void collapse()
-	{
-		for (int i=0; i<length-1; ++i)
-		{
-			if (sequence[i] != sequence[i+1]) continue;
-			
-			for (int j=i+1; j<length-1; ++j)
-			{
-				if ()
-			}
-		}
-		
-	}
-	
-	find the number of repeating characters
-	find the winner (a or b) based on where the repeat stops
-	
-	when there is a repeat, it MUST be possible to take some kind of shortcut
-
-	if looking at a single character repeat then it is possible to assign an ordering to ALL elements within the repeat region
-	this is a good shortcut
-	
-	but how can a generic solution be implemented for repeats of any complexity?
-};
-*/
-/**
- * Basically a merge-sort that uses tail end recursion
- * 'Up' pointers are used to mark diagonal threads and accelerate the merge step
- */
-struct CrossThreadSort
-{
-	string sequence;
-	int length;
-	queue<int> copy;
-	vector<int> blocks;
-	vector<int> ups;
-	vector<int> cache;
-	
-	vector<int> block2pos;
-	vector<int> pos2block;
-	
-	int calls;
-	int advances;
-	int iteration;
-	int shortcuts;
-	
-	bool verbose;
-		
-	//Initialize the object
-	void init(string &s, vector<int> &b)
-	{
-		verbose = true;
-		
-		blocks   = b;
-		sequence = s;
-		length   = s.size();
-
-		blocks.clear();
-		blocks.resize(length);
-		
-		ups.clear();
-		ups.resize(length);
-		
-		cache.clear();
-		cache.resize(length);
-		
-		block2pos.clear();
-		block2pos.resize(length);
-		
-		pos2block.clear();
-		pos2block.resize(length);
-		
-		calls = 0;
-		advances = 0;
-		
-		//Initialize the blocks
-		for (int i=0; i<length; ++i)
-		{
-			blocks[i] = i;
-			ups[i] = 0;
-			cache[i] = -1;
-			block2pos[i] = -1;
-			pos2block[i] = -1;
-		}
-	}	
-	
-	//Print out the stacks to the screen
-	void dump(int x1, int x2, int end)
-	{
-		cout << "-------------------" << endl;
-
-		int len = (length > 80) ? 80 : length;
-		
-		for (int i=x1; i<x2; ++i)
-		{
-			cout << blocks[i] << " : " << ups[blocks[i]] << " : ";
-			for (int j=0; j<len; ++j)
-			{
-				int p = blocks[i] + j; if (p >= length) p -= length;
-				cout << sequence[p];
-			}
-			cout << endl;
-		}
-		cout << endl;
-		for (int i=x2; i<=end; ++i)
-		{
-			cout << blocks[i] << " : " << ups[blocks[i]] << " : ";
-			for (int j=0; j<len; ++j)
-			{
-				int p = blocks[i] + j; if (p >= length) p -= length;
-				cout << sequence[p];
-			}
-			cout << endl;
-		}
-	}
-	
-	//Merge sort the blocks
-	void sort(string &s, vector<int> &b)
-	{
-		//Initialize
-		init(s,b);
-		
-		//For each n^2 iteration
-		for (int bin=1; bin<length; bin*=2)
-		{
-			cout << "Sorting iteration: " << bin << endl;
-			
-			calls = 0; advances = 0; shortcuts = 0; iteration = bin;
-			
-			//Clear out the cache
-			for (int i=0; i<length; ++i)
-			{
-				cache[i] = -1;
-				block2pos[i] = -1;
-				pos2block[i] = -1;
-			}
-			
-			//Merge each pair of bins
-			for (int start=0; start<length-bin; start+=2*bin)
-			{
-				//Determine the sizes of the two bins
-				int sizeA = bin;
-				int sizeB = bin;
-				
-				//Adjust bin B if necessary
-				if (start + 2*bin > length)
-				{
-					sizeB = length - (start + bin);
-					
-					//Sanity check
-					if (sizeB < 0) {cout << "ERROR: this case should not be possible" << endl;exit(1);}
-				}
-				
-				if (verbose)
-				{
-					cout << endl;
-					cout << "MERGE: " << iteration << "[" << start << "," << (start+bin) << "][" << sizeA << "," << sizeB << "]" << endl;
-					dump(start, start+bin, start+(sizeA+sizeB)-1);
-				}
-
-				merge(start, sizeA, sizeB);
-			}
-			cout << "Calls:" << calls << " Advances:" << advances << " Shortcuts: " << shortcuts << endl;
-		}
-
-		//Set the sorted blocks
-		b = blocks;
-		
-		if (verbose)
-		{
-			cout << "Final Blocks" << endl;
-			dump(0,length,length-1);
-		}
-	}
-	
-	//The crossthread-merge approach. Sorts based on offsets using the cache to take shortcuts where possible
-	void merge(int start, int sizeA, int sizeB)
-	{
-		int posA = start;
-		int posB = start + sizeA;
-		int size = sizeA + sizeB;
-		int bin  = sizeA;
-		int end  = start + size;
-		
-		ups[blocks[posA]] = 0;
-		ups[blocks[posB]] = 0;
-		
-		//Merge the two ranges into the queue
-		for (int i=start; i<end; ++i)
-		{
-			//If a block is empty, flush the other and break
-			// if (sizeA == 0) { while (i<end) { cache[blocks[posB]] = i; posB++; i++; } break; }
-			// if (sizeB == 0) { while (i<end) { cache[blocks[posA]] = i; posA++; i++; } break; }
-			if (sizeA == 0) { while (i<end) { block2pos[blocks[posB]] = i; pos2block[i] = blocks[posB]; posB++; i++; } break; }
-			if (sizeB == 0) { while (i<end) { block2pos[blocks[posA]] = i; pos2block[i] = blocks[posA]; posA++; i++; } break; }
-			
-			//Link a pair by setting the 'up' pointer of the lesser element
-			bool aWins = link(blocks[posA], blocks[posB], i-1);
-			
-			//Queue the better element
-			// if (aWins) { cache[blocks[posA]] = i; posA++; sizeA--; }
-			// else       { cache[blocks[posB]] = i; posB++; sizeB--; }
-			if (aWins) { block2pos[blocks[posA]] = i; pos2block[i] = blocks[posA]; posA++; sizeA--; }
-			else       { block2pos[blocks[posB]] = i; pos2block[i] = blocks[posB]; posB++; sizeB--; }
-		}
-		
-		//Flush the cache (copy sorted element back into blocks)
-		for (int i=start; i<end; ++i)
-		{
-			// blocks[cache[i]] = i;
-			// if (verbose) cout << "set:" << i << " to " << cache[i] << endl;
-			blocks[i] = pos2block[i];
-			if (verbose) cout << "set:" << i << " to " << blocks[i] << endl;
-		}		
-	}
-	
-	//Compare two blocks to determine order and link the lower to the upper. Returns true if the upper is A, false if it's B
-	bool link(int blockA, int blockB, int lastcache)
-	{
-		//Copy the offset pointers
-		int a = ups[blockA];
-		int b = ups[blockB];
-		
-		//Instant winner if the offsets are different
-		if (a != b) return a > b;
-		
-		//Convert relative offsets to absolute positions
-		a += blockA; if (a >= length) a -= length;
-		b += blockB; if (b >= length) b -= length;
-		
-		//Advance to find the first point of difference
-		for (int offset=ups[blockA]; offset<length; ++offset)
-		{			
-			//Winner known if the characters are different
-			if (sequence[a] < sequence[b]) { update(blockB, offset); return true;  }
-			if (sequence[b] < sequence[a]) { update(blockA, offset); return false; }
-			
-			//Winner known if both blocks are cached (have to trace up through the pointers to find the offset)
-			// if (cache[a] >= 0 && cache[b] >= 0)
-			// {
-			// 	if (cache[a] < cache[b]) { update(blockB, offset + ups[b]); return true;  }
-			// 	if (cache[b] < cache[a]) { update(blockA, offset + ups[a]); return false; }
-			// 	cout << "ERROR0" << endl; exit(1);
-			// }
-			int cacheA = block2pos[a];
-			int cacheB = block2pos[b];
-			
-			if (cacheA != -1 || cacheB != -1)
-			{
-				if (cacheA != -1 && cacheB != -1)
-				{
-					if (cacheA < cacheB) { update(blockB, offset + trace(cacheA,cacheB)); cout << '.'; return true;  }
-					if (cacheB < cacheA) { update(blockA, offset + trace(cacheB,cacheA)); cout << '.'; return false; }
-					cout << "ERROR: cache values cannot be the same" << endl;exit(1);
-				}
-				//if (cacheA >= 0 && cacheA < lastcache) { update(blockB, offset + trace(cacheA,lastcache)); cout << '.'; return true; }
-				//if (cacheB >= 0 && cacheB < lastcache) { update(blockA, offset + trace(cacheB,lastcache)); cout << '.'; return false; }
-			}
-			
-			//Advance to the next position
-			if (++a == length) a = 0;
-			if (++b == length) b = 0;
-			advances++;
-		}
-		cout << "ERROR: entire block is a repeat" << endl;
-		exit(1);
-	}
-	
-	//Trace finds the minimum offset ('up' pointer) between two cached elements from b (lower) to a (upper)
-	//That minimum offset is guaranteed to be the first point of difference between the two blocks
-	int trace(int cacheA, int cacheB)
-	{
-		if (cacheB <= cacheA) {cout << "Logical error " << cacheA << " " << cacheB << endl; exit(1); }
-		int best = length;
-		
-		for (int i=cacheB; i>cacheA; --i)
-		{
-			int offset = ups[pos2block[i]];
-			if (offset == 1) return 1;
-			if (offset < best) best = offset;
-		}
-		return best;
-	}
-	
-	//Adjust the offset pointers of all losing blocks up to the offset.
-	//The process can stop when an equal offset is found
-	//Offset pointers can be advanced but never reduced
-	void update(int start, int offset)
-	{
-		cout << "Update loser: " << start << " " << offset << endl;
-		
-		ups[start] = offset;
-		return;
-		
-		for (int i=0; i<offset; ++i)
-		{
-			//Sanity check (cannot have been cached)
-			// if (cache[start] >= 0)
-			// {
-			// 	cout << "strlen" << sequence.size() << " cachelen" << cache.size() << endl;
-			// 	
-			// 	for (int j=0; j<sequence.size(); ++j)
-			// 	{
-			// 		cout << j << " " << sequence[j] << endl;
-			// 	}
-			// 	cout << "start and offset " << start << " " << offset << " " << (start+i) << ": ERROR3" << endl; exit(3);
-			// }
-			
-			//No need to do anything further if the offset is already optimal
-			if (offset-i <= ups[start]) break;
-
-			//Set the up pointer
-			//ups[start] = offset-i;
-			
-			//Move to the next position
-			if (++start == length) start = 0;
-		}
-	}
-};
-
-
-/*
-
-I need to find a shortcut to deal with situations where there is a very long advance process due to an internal repeat
-and that repeat does not contain characters that have been cached
-
-There is a quick shortcut that can be taken when the entire block is a repeat (using the winners approach)
-
-Recursive internal minisort?
-	- this would work I think
-	- a new collection of sorted elements would be created
-	- the new collection would then need to be merged back into the old one
-	
-	
-SQUARESORT
-	- conducted whenever the two parent sequences are identical (repeats)
-	- the shape of the block is a square
-	- ie, if the repeat is 100 characters long, then 100 blocks are taken for each A and B
-	- the point of difference is determined for the first elements (which will never be located in A as they are repeats)
-	- the dominant square is then known and the spacing between the squares is known
-	- standard sort is then conducted
-	- if the elements have the same offset, then defer to the dominant block
-	- on defer, the up pointer is adjusted by the square spacing (which is known)
-	- ASSERT: the same offset should only occur when the square spacing between two blocks is observed
-
-RULE
-	- when comparing two elements the UP pointer can NEVER decrease
-	- the winner keeps the same pointer
-	- the loser either keeps the same pointer or has it INCREASED
-	- this can be used
-	
-INTERNAL REPEAT
-	- when an internal repeat is discovered
-
-
-//0 aaabaa
-//1 aabaaa
-//2 abaaaa
-//3 baaaaa
-//4 aaaaab
-//5 aaaaba
-
-
-/*
-build the master radix table
-
-reorder elements into radix groups
-
-determine the outer running order (smallest to largest)
-
-for each outer radix (smallest to largest)
-{
-	determine the inner running order (smallest to largest)
-	
-	for each inner radix (smallest to largest)
-	{
-		skip if the radix [outer,inner] has already been processed
-		
-		clear the radix stack
-		clear the merge stack
-	
-		push the range to the radix stack
-	
-		while the radix stack has values
-		{
-			pop the radix range
-			
-			if range < 2
-			{
-				continue
-			}
-			if range == 2
-			{
-				compare the two blocks directly
-				swap if necessary
-				continue
-			}
-			
-			sort the range at the current offset (results in radix sort with each radix split into cached(A) and uncached(B))
-
-			for each radix block (A is already sorted if it exists)
-			{
-				if A == range
-				{
-					continue
-				}
-				
-				if A > 0
-				{
-					push [A,B,offset] onto the merge stack
-				}
-
-				push B onto the range stack with an increased offset
-			}
-		}
-	
-		while the merge stack has values
-		{
-			pop a merge element
-	
-			if A == 0 continue
-			if B == 0 continue
-			
-			merge A & B
-		}
-	
-		set the caches for all elements in radix[outer,inner]
-	}
-	set the caches for all elements in radix[X,outer]
-}
-
-
-
-
-:: SCENARIOS ::
-
-1: same, no cache
-	advance offset
-	
-2: same, cache
-	partition into [cache,nocache]
-	sort cache
-	advance offset for nocache
-
-3: different, no cache OR cache
-	partition into radix groups
-	diagnose each radix group
-
-
-Sort all the blocks based on a certain offset. The result is a radix sort with cached elements in a radix being sorted before uncached
-Walk through
-	if all the elements are cached then no further sorting is needed
-	if there is 1 element then no sorting is needed
-	if there are 2 elements then a simple comparison is needed
-	if there is an uncached section, then it must be sorted on the next offset
-	when there is both a cached and uncached section, then they must be merged
-*/
-
-
-
-
-
-/*
-
-:: SHORTCUT IN PARENT MERGE
-----a-------b----------------------------------------------------
-|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-A->a
-
-------------a-------b--------------------------------------------
-|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-A->a
-
---------------------a-------b------------------------------------
-|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-A->a, C->a
-
-----------------------------a-------b----------------------------
-|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-A->a, C->a
-
-------------------------------------a-------b--------------------
-|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-A->a, C->a, E->a
-
---------------------------------------------a-------b------------
-|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-A->a, C->a, E->a
-
-----------------------------------------------------a-------b----
-|	A	|	B	|	C	|	D	|	E	|	F	|	G	|	H	|
-A->a, C->a, E->a, G->a				
-
-
-:: CROSS-THREAD ::
-------------X--------------------
-|	A	|	B	|	C	|	D	|
-
-- sequenceA != sequenceB
-- blocksA != blocksB
-- greatest offset always wins
-- same offset -> advance to first difference (can be slow)
-
-:: ANCHOR ::
---------------------X------------
-|	A	|	B	|	C	|	D	|
-
-- sequenceA == sequenceB
-- blocksA != blocksB
-- cross-thread merge with a shortcut
-	- if blocks are spaced by 'bin' -> defer to dominant block
-	- otherwise advance
-
-:: FAST ANCHOR ::
-----------------------------X----
-|	A	|	B	|	C	|	D	|
-
-- sequenceA == sequenceB == sequenceC
-- blocksA == blocksB
-- same as above but faster as advance is never needed
-
-:: SORT ::
-{
-	for each n^2 iteration
-	{
-		if the lead indicator is marked
-		{
-			the first anchor is known
-		}
-		else
-		{
-			determine the first anchor
-		}
-
-		merge the blocks (start sizeA sizeB anchor)
-
-		if the anchor is inside the next bin
-		{
-			unmark the lead indicator
-		}
-		else
-		{
-			mark as many lead indicators downstream as possible
-		}
-	}
-}
-
-:: MERGE ::
-{
-	given ranges and anchor
-
-	determine the dominant block
-	set the 'up' values for the head elements
-
-	while there are items to merge
-	{
-		if A is empty, flush B and exit
-		if B is empty, flush A and exit
-	
-		get the 'up' values for the lead elements
-	
-		if the values are not equal
-		{
-			queue the greater one
-			continue
-		}
-	
-		if the blocks are bin-spaced and before the anchor
-		{
-			defer to the dominant block
-			queue the element from the dominant block
-			set the 'up' pointer for the other element to be the anchor
-			continue
-		}
-		
-		advance to the first difference
-		queue the better element
-		set the 'up' pointer of the other element to be the difference
-	}
-	
-	
-	
-	
-xxxxxxxx|oooxxxxx|xxxoooB	
-xxxxxxxo|oooxxxxx|xxxoooB
-xxxxxxoo|ooxxxxxx|xxoooB
-xxxxxooo|oxxxxxxx|xoooB
-xxxxooox|xxxxxxxx|oooB
-xxxoooxx|xxxxxxxo|ooB
-xxoooxxx|xxxxxxoo|oB
-xoooxxxx|xxxxxooo|B
-oooxxxxx|xxxxoooB|
-}
-
-13-aaatpalplantntan
-14-aatpalplantntana
-02-alplantntanaaatp
-11-anaaatpalplantnt
-06-antntanaaatpalpl
-15-atpalplantntanaa
-05-lantntanaaatpalp
-03-lplantntanaaatpa
-12-naaatpalplantnta
-09-ntanaaatpalplant
-07-ntntanaaatpalpla
-01-palplantntanaaat
-04-plantntanaaatpal
-10-tanaaatpalplantn
-08-tntanaaatpalplan
-00-tpalplantntanaaa
-
-30-alpplanttnalpptn
-24-alpptnalpplanttn
-19-anttnalpptnalppl
-18-lanttnalpptnalpp
-31-lpplanttnalpptna
-25-lpptnalpplanttna
-29-nalpplanttnalppt
-23-nalpptnalpplantt
-20-nttnalpptnalppla
-17-planttnalpptnalp
-16-pplanttnalpptnal
-26-pptnalpplanttnal
-27-ptnalpplanttnalp
-28-tnalpplanttnalpp
-22-tnalpptnalpplant
-21-ttnalpptnalpplan
-
-
-
-
-13-aaatpalplantntan
-14-aatpalplantntana
-02-alplantntanaaatp
-11-anaaatpalplantnt
-06-antntanaaatpalpl
-15-atpalplantntanaa
-05-lantntanaaatpalp
-03-lplantntanaaatpa
-12-naaatpalplantnta
-09-ntanaaatpalplant
-07-ntntanaaatpalpla
-01-palplantntanaaat
-04-plantntanaaatpal <-
-10-tanaaatpalplantn
-08-tntanaaatpalplan
-00-tpalplantntanaaa
-
-30-alpplanttnalpptn
-24-alpptnalpplanttn
-19-anttnalpptnalppl
-18-lanttnalpptnalpp
-31-lpplanttnalpptna
-25-lpptnalpplanttna
-29-nalpplanttnalppt
-23-nalpptnalpplantt
-20-nttnalpptnalppla
-17-planttnalpptnalp <-
-16-pplanttnalpptnal
-26-pptnalpplanttnal
-27-ptnalpplanttnalp
-28-tnalpplanttnalpp
-22-tnalpptnalpplant
-21-ttnalpptnalpplan
-
-
-
-
-
-*/
-
-
-/*
-:: Range Sorter ::
-Idea here is to give each block a range of possible positions. As the sort proceeds
-block ranges are refined until, at the end of the sort, each block's range covers
-only one position.
-
-Standard merge sort using upwards pointers works well until repeats are encountered.
-The purpose of the range is to avoid excessive comparisons that arise from repeats.
-Whenever the comparison between two blocks proceeds for more than one base (in other
-words, whenever the first character(s) of the blocks are the same), then the ranges
-for all blocks of an index up to the first point of difference between the two blocks
-being compared, can be adjusted. Adjustment of this range allows future comparisons
-to abort early with information about the proper ordering.
-
-The upward arrows should be adjustable during this phase because a more downstream
-arrow indicates greater similarity, meaning that the block in question does not need
-an arrow adjustment...or perhaps this would degrade into bubble sort.
-
-Binary search of the arrow space above a block would allow insertion of a new block.
-This would also require the use of some kind of linked-list type structure. Binary
-search and linked list tend to not work well together so I would need a solution 
-for that.
-
-*/
-
-/*
-:: Link Sort ::
-See the associated powerpoint presentation to explain stepwise how this sorting works.
-
-Reads are sorted using mergesort which is a divide and conquer approach that works with
-O log(n) comlexity. Reads are compared and ordered in a doubly linked list. The left
-link also carries a value denoting the relative point between the two reads where a 
-difference is first detected. When merging reads for order, the offset can be used to
-take a shortcut (the higher offset automatically wins). If there is a deadlock then
-a comparison is conducted to determine the winner and the offset adjusted.
-
-When a read with an adjusted pointer is appended to the merge list, then an attempt is
-made to take a shortcut and auto insert all upstream and downstream pairs from the 
-offset, aborting if a better pointer is encountered.
-
-This extension process can be length, but once done once, the same ground does not 
-have to be travelled. In the worst case there will be 2n comparisons per iteration.
-
-So the final process should end up having a complexity of n.log(n).
-*/
 
 /**
  * Divide and conquer merge sort applied to the Burrows-Wheeler Transformation. 
@@ -3118,48 +1644,14 @@ So the final process should end up having a complexity of n.log(n).
  *
  * To conserve memory the linked list of blocks also doubles as a linked list of 
  * groups.
- *
- * When two orphan groups are to be merged, the head elements are compared to find
- * the dominant block. This then defines the dominant and submissive group. The 
- * submissive group is always merged into to the dominant. Where a group is not an
- * orphan, it is immediately defined as submissive and merged into the group to 
- * which the head element points.
- *
- * To ensure optimal operation, a merge is aborted if the number of appends from
- * either group exceeds the current log iteration. Where a crossed-pointer is 
- * encountered (when a block points to a different group) a splice is conducted
- * at that point with the crossed block then defining the submissive group. The 
- * merge then continues.
  */
-
-/*
-
-Two groups are compared
-- the dominant group becomes A
-- the submissive group becomes B
-- B is then merged into A
-- if {b} is cross-linked
-	- A is redefined as the group that {b} points to
-	- B remains the same
-- if {a} is cross-linked
-	- A is redefined as the group that {a} points to
-	- B is redefined as the remainder of the old A group
-	
-Counters keep track of the number of merged blocks from each group
-- if a counter exceeds the bin limit
-	- abort the merge and return {b}
-	- {b} replaces the B group header
-- otherwise if the merge runs to completion
-	- return NULL
-	- remove the group
-*/
 struct BlockSort
 {
 	struct block
 	{
 		unsigned int index; //index of this block
-		unsigned int gnext; //index of the next group
-		unsigned int gprev; //index of the prev group
+		//unsigned int gnext; //index of the next group
+		//unsigned int gprev; //index of the prev group
 		unsigned int next;  //closest next block
 		unsigned int prev;  //closest prev block
 		unsigned int diff;  //first difference between this block and prev block
@@ -3170,151 +1662,232 @@ struct BlockSort
 	unsigned int BLANK;
 	vector<bool> flags;
 	vector<block> blocks;
+	vector<unsigned int> heads;
 
 	block * gfirst;
+	
+	//Debugging
+	unsigned int splices;
+	unsigned int nulls;
+	unsigned int appends;
+	unsigned int aborts;
+	unsigned int resolves;
+	unsigned int cascades;
+	unsigned int cascades2;
+	unsigned int orphans;
+	unsigned int quicks;
+	unsigned int groups;
+	unsigned int bcount;
+	unsigned int ccount;
+		
+	bool debug;
 	
 	//Get a pointer to a block
 	block * _b(unsigned int index)
 	{
-		assert(index <= length);
+		//assert(index <= length);
+		++bcount;
 		return (index == length) ? NULL : &(blocks[index]);
 	}
+	
+	char _c(unsigned int index)
+	{
+		//assert(index < length);
+		++ccount;
+		return sequence[index];
+	}
+	
+	//Print out information about a block
+	void dump(block * q)
+	{
+		if (q == NULL)
+		{
+			cout << "Unknown block: " << q->index << endl;
+		}
+		else
+		{
+			cout << blockseq(q->index) << ' ' << q->prev << " <- " << q->index << " -> " << q->next << " (" << q->diff << ") ";
+
+			if (q->prev != BLANK)
+			{
+				if (_b(q->prev)->next != q->index) cout << '*';
+			}
+			cout << endl;
+		}
+	}
+	
+	void matrix()
+	{
+		// cout << "--------------------" << endl;
+		// block * p = gfirst;
+		// 
+		// for (block * p = gfirst; p != NULL; p = _b(p->gnext))
+		// {
+		// 	for (block * q = p; q != NULL; q = _b(q->next))
+		// 	{
+		// 		dump(q);
+		// 	}
+		// 	cout << endl;
+		// }		
+		// cout << "--------------------" << endl;
+	}
+	
+	//Get the sequence for a particular block
+	string blockseq(unsigned int index)
+	{
+		string s = "";
+		
+		for (unsigned int i=0; i<length; ++i)
+		{
+			if (index == length) index = 0;
+			s += sequence[index];
+			index++;
+		}
+		return s;
+	}	
 
 	//Initialize the object
 	void init(string &s)
 	{
+		debug = false;
 		length = s.size();
 		BLANK = length;
 		sequence = s.c_str();
 				
 		blocks.resize(length);
 		flags.resize(length);
+		heads.resize(length);
 		
 		for (int i=0; i<length; ++i)
 		{
 			blocks[i].index = i;
 			blocks[i].next  = BLANK;
 			blocks[i].prev  = BLANK;
-			blocks[i].diff  = 0;
+			blocks[i].diff  = BLANK;
 			
-			blocks[i].gnext = i+1;
-			blocks[i].gprev = i-1;
+			//blocks[i].gnext = i+1;
+			//blocks[i].gprev = i-1;
 
 			flags[i] = false;
+			
+			heads[i] = i;
 		}
-		blocks[0].gprev = BLANK;
-		blocks[length-1].gnext = BLANK;
-		
-		gfirst = _b(0);
-	}
-		
-	//Remove a group
-	void remove(block * b)
-	{
-		assert(b != NULL);
-		assert(b->gprev != BLANK || b->gnext != BLANK);
-		
-		if (b->gprev != BLANK) _b(b->gprev)->gnext = b->gnext;
-		if (b->gnext != BLANK) _b(b->gnext)->gprev = b->gprev;
-		
-		if (b == gfirst) gfirst = _b(b->gnext);
-		
-		b->gprev = BLANK;
-		b->gnext = BLANK;
+		// blocks[0].gprev = BLANK;
+		// blocks[length-1].gnext = BLANK;
+		// 
+		// gfirst = _b(0);
 	}
 	
-	//Replace a group with another one
-	void replace(block * old, block * fresh)
-	{
-		assert(old != NULL && fresh != NULL);
-		assert(fresh != gfirst);
-		assert(old->gprev != BLANK || old->gnext != BLANK);
-
-		fresh->gnext = old->gnext;
-		fresh->gprev = old->gprev;
-		
-		if (old->gprev != BLANK) _b(old->gprev)->gnext = fresh->index;
-		if (old->gnext != BLANK) _b(old->gnext)->gprev = fresh->index;
-		
-		if (old == gfirst) gfirst = fresh;
-		
-		old->gnext = BLANK;
-		old->gprev = BLANK;
-	}
+	// //Remove a group
+	// void remove(block * b)
+	// {
+	// 	//assert(b != NULL);
+	// 	//assert(b->gprev != BLANK || b->gnext != BLANK);
+	// 	
+	// 	if (b->gprev != BLANK) _b(b->gprev)->gnext = b->gnext;
+	// 	if (b->gnext != BLANK) _b(b->gnext)->gprev = b->gprev;
+	// 	
+	// 	if (b == gfirst) gfirst = _b(b->gnext);
+	// 	
+	// 	b->gprev = BLANK;
+	// 	b->gnext = BLANK;
+	// 	
+	// 	//if (debug) cout << " - remove " << b->index << endl;
+	// 	////if (debug) matrix();
+	// }
 	
-	void dump(block * b)
-	{
-		//cout << b->index << ':' << b->gprev << ' ' << b->gnext << endl;
-	}
-	
-	void matrix()
-	{
-		block * p = gfirst;
-		
-		for (block * p = gfirst; p != NULL; p = _b(p->gnext))
-		{
-			for (block * q = p; q != NULL; q = _b(q->next))
-			{
-				//cout << q->index << ' ' << q->diff << endl;
-			}
-			//cout << endl;
-		}
-	}
+	// //Replace a group with another one
+	// void replace(block * old, block * fresh)
+	// {
+	// 	if (old == fresh) return;
+	// 	
+	// 	//assert(old != NULL && fresh != NULL);
+	// 	//assert(old != fresh);
+	// 	//assert(fresh != gfirst);
+	// 	//assert(old->gprev != BLANK || old->gnext != BLANK);
+	// 	
+	// 	if (fresh->gprev != BLANK || fresh->gnext != BLANK) remove(fresh);
+	// 
+	// 	fresh->gnext = old->gnext;
+	// 	fresh->gprev = old->gprev;
+	// 	
+	// 	if (old->gprev != BLANK) _b(old->gprev)->gnext = fresh->index;
+	// 	if (old->gnext != BLANK) _b(old->gnext)->gprev = fresh->index;
+	// 	
+	// 	if (old == gfirst) gfirst = fresh;
+	// 	
+	// 	old->gnext = BLANK;
+	// 	old->gprev = BLANK;
+	// 
+	// 	//if (debug) cout << " - replace " << old->index << " with " << fresh->index << endl;
+	// 	////if (debug) matrix();		
+	// }
 	
 	//Set the winner between two blocks. True if {a} wins.
-	bool resolve(block * a, block  * b)
+	bool resolve(block * a, block * b)
 	{
-		//Cannot resolve blocks that don't point to the same parent. Note that if both blocks
-		//have *no* parent, then the resolution will be successful.
-		assert(a != b);
-		assert(a->prev == b->prev);
-
-		//cout << "Compare " << a->index << '&' << b->index << '=';
+		//Blocks must point to the same parent
+		//assert(a != b);
+		//assert(a->prev == b->prev);
 		
 		//Auto win to the bigger up pointer
-		if (a->diff != b->diff) {
-			//cout << ((a->diff > b->diff) ? a->index : b->index) << endl;
-			return a->diff > b->diff;
+		if (a->diff != b->diff)
+		{
+			//assert(a->diff != BLANK);
+			//assert(b->diff != BLANK);
+		
+			if (a->diff > b->diff)
+			{
+				b->prev = a->index;
+				return true;
+			}
+			a->prev = b->index;
+			return false;				
 		}
-
+		
 		//Find the point of first difference
-		unsigned int p1 = a->index + a->diff;
-		unsigned int p2 = b->index + b->diff;
+		unsigned int diff = (a->diff == BLANK) ? 0 : a->diff;
 
+		unsigned int p1 = a->index + diff;
+		unsigned int p2 = b->index + diff;
+		
 		if (p1 >= length) p1 -= length;
 		if (p2 >= length) p2 -= length;
 
-		for (unsigned int i=a->diff; i<length; ++i,++p1,++p2)
+		//Not faster to try to take a shortcut looking for a<-->b
+		while (diff < length)
 		{
-			if (p1 == length) p1 = 0;
-			if (p2 == length) p2 = 0;
+			++resolves;
 
-			if (sequence[p1] == sequence[p2]) continue;
-			
-			if (sequence[p1] < sequence[p2])
+			if (_c(p1) != _c(p2))
 			{
-				b->diff = i;
-				b->prev = a->index;
-				flags[b->index] = true;
-				//cout << a->index << endl;
-				return true;
-			}
-			else
-			{
-				a->diff = i;
+				if (_c(p1) < _c(p2))
+				{
+					b->diff = diff;
+					b->prev = a->index;
+					flags[b->index] = true;
+					return true;
+				}
+				a->diff = diff;
 				a->prev = b->index;
 				flags[a->index] = true;
-				//cout << b->index << endl;
 				return false;
 			}
+			
+			//Advance to the next character
+			if (++p1 == length) p1 = 0;
+			if (++p2 == length) p2 = 0;
+			++diff;
 		}
-		
+
 		//Should not be possible to get here
+		//FIXME: deal with this by keeping a pseudo element (end of string)
 		cout << "Whole string is a repeat" << endl;
-		assert(false);
+		//assert(false);
 	}
 	
-	//Given a newly placed block, try to advance downstream pairs
+	//When the diff pointer of a newly placed read has been advanced then cascade upstream and downstream
+	//Cascade identifies the bounds of the repeated segment and updates all character pairs
 	void cascade(block * z)
 	{
 		//No need to do anything if not flagged
@@ -3323,301 +1896,588 @@ struct BlockSort
 		//Unflag the block
 		flags[z->index] = false;
 		
-		if (z->diff == 0) return;
+		//Shouldn't be possible for a flagged block to point nowhere
+		//assert(_b(z->prev) != NULL);
+		//assert(z->diff != BLANK);
+
+		unsigned int p1 = z->prev;
+		unsigned int p2 = z->index;
+		unsigned int diff = z->diff;
 		
-		//assert(z->diff > 0);
-		assert(_b(z->prev) != NULL); //shouldn't be possible for a flagged block to point nowhere
-		unsigned int a = _b(z->prev)->index + 1;
-		unsigned int b = z->index + 1;
+		//if (debug) cout << " - cascade " << p2 << " to " << p1 << endl;
+		////if (debug) matrix();
 		
-		//cout << "Cascading: " << a << '/' << b << ' ' << z->diff << endl;
-		
-		for (unsigned int i=z->diff - 1; i>0; --i,++a,++b)
+		//Backtrack to the start of the matching segment
+		while (_c(p1) == _c(p2))
 		{
-			if (a == length) a = 0;
-			if (b == length) b = 0;
+			//Think of diagonal reverse plots
+			// - if the backtrace is on the same line then abort (handle it later)
+			// - if the backtrace is higher, then update all, assert impossible to be better
+			// - corrugation is dealt with later
+			if (p2 != z->index)
+			{
+				//Abort if it's not an improvement
+				if (_b(p2)->diff == diff)
+				{
+					if (_b(p2)->prev != p1)
+					{
+						break;
+					}
+				}
+			}
+
+			if (p1 == 0) p1 = length;
+			if (p2 == 0) p2 = length;
 			
-			//cout << "Cascade compare: " << a << ' ' << b << endl;
+			--p1; --p2; ++diff; ++cascades2;
+		}
+
+		//Update all pairs through to the end of the matching segment
+		while (diff != 0)
+		{
+			if (++p1 == length) p1 = 0;
+			if (++p2 == length) p2 = 0;
+
+			--diff; ++cascades;
 			
-			//Abort if a better placement is already known
-			//cout << "Diff: " << blocks[b].diff << " i: " << i << endl;
-			if (blocks[b].diff > i) break;
+			//if (diff != 0) assert(_c(p1) == _c(p2));
+			//if (diff == 0) assert(_c(p1) != _c(p2));
+
+			//if (debug) cout << "   - " << p2 << "->" << p1 << endl;
 			
-			blocks[b].diff = i;
-			blocks[b].prev = a;
+			//Sanity check
+			if (p2 == z->index)
+			{
+				//assert(diff == z->diff);
+				continue;
+			}
+			
+			//Sanity check
+			// if (flags[p2])
+			// {
+			// 	//assert(_b(p2)->prev == z->index);
+			// }
+
+			//Update if blank or worse
+			if (_b(p2)->diff == BLANK || _b(p2)->diff < diff)
+			{
+				//If the block happens to be part of an active resolve, then unflag it (if set)
+				//There is no need to cascade it because THIS is it's cascade
+				if (_b(p2)->prev == z->index)
+				{
+					flags[p2] = false;
+				}
+				
+				//Update the loser in the pair
+				_b(p2)->diff = diff;
+				_b(p2)->prev = p1;
+
+				//if (debug) cout << "    - update " << p2 << " to " << p1 << endl;
+				////if (debug) matrix();
+
+				continue;
+			}
+			
+			//If the diff is > then a previous cascade SHOULD have resolved it (abort)
+			if (_b(p2)->diff >= diff)
+			{
+				//Don't abort if the diff has recently been set during a resolve()
+				if (flags[p2])
+				{
+					continue;
+				}
+				
+				//Sanity check. Superior diff cannot occur upstream, only downstream
+				//if (_b(p2)->diff > diff) //assert(diff < z->diff);
+				
+				// //Sanity check. Ensure superior relationship holds true at all downstream positions
+				// while (diff != 0)
+				// {
+				// 	//assert(_b(p2)->diff >= diff);
+				// 	if (++p1 == length) p1 = 0;
+				// 	if (++p2 == length) p2 = 0;
+				// 
+				// 	--diff;
+				// }
+				break;
+			}
+			
+			//If the diff is == then abort
+			if (_b(p2)->diff == diff)
+			{
+				//Don't abort if the diff has recently been set during a resolve()
+				if (flags[p2])
+				{
+					continue;
+					//flags[p2] = false;
+				}
+				break;
+			}
 		}
 	}
 	
-	//Merge group B into group A (A is defined by what B points to)
-	void merge(block * group, unsigned int bin)
+	//Append a block {b} to the tail of a merged list {z} and return the displaced read (if there is one)
+	void append(block * b, block * z)
 	{
-		assert(group != NULL);
-		assert(group->gprev != BLANK || group->gnext != BLANK);
+		//if (debug) cout << " - append " << b->index << " to " << z->index << " (" << b->diff << ")" << endl;
 		
-		block * b = group;       assert(b != NULL); //head element from group B
-		block * z = _b(b->prev); assert(z != NULL); //tail element from AB
-		block * a = _b(z->next); //head element from group A
-		
-		//cout << "Merging " << b->index << " into " << z->index << endl;
-		
-		assert(a != b);
-		
-		unsigned int count_a = 0;
-		unsigned int count_b = 0;
-				
-		//Merge group B into group A
-		while (true)
+		if (z->next != b->index)
 		{
-			//Finish if A is empty
-			if (a == NULL)
-			{
-				//Only update B if it's not empty
-				if (b != NULL)
-				{
-					//cout << "Empty A, append {b}: " << b->index << endl;
-					
-					z->next = b->index;
-					//assert(b->prev == z->index);
-				}
-				else
-				{
-					assert(z->next == BLANK);
-				}
-				remove(group);
-				
-				return;
-			}
+			z->next = b->index;
 			
-			//Finish if B is empty (A can't be empty to get here)
-			if (b == NULL)
+			////assert(b->prev == z->index);
+			if (b->prev == z->index)
 			{
-				//cout << "Empty B, append {a}: " << a->index << endl;
-				z->next = a->index;
-				//assert(a->prev == z->index);
-				remove(group);
-				
-				return;
+				cascade(b);
 			}
-			
-			//Abort if the bin size is exceeded by either counter
-			// if (count_a > bin || count_b > bin)
-			// {
-			// 	z->next = a->index;
-			// 	replace(group,b);
-			// 	//cout << "Appended (abort)" << a->index << endl;
-			// 	return;
-			// }
-			
-			//Splice if {a} has a crossed pointer
-			if (a->prev != z->index)
-			{
-				//cout << "Splice A: " << a->index << '>' << a->prev << endl;
+		}
+		//assert(!flags[b->index]);
+		////if (debug) matrix();
+		++appends;
+	}
+	
+	//Merge group B into group A (A is defined by what B points to)
+	unsigned int merge(block * group, unsigned int bin)
+	{
+		//assert(group != NULL);
+		//assert(group->gprev != BLANK || group->gnext != BLANK);
 				
-				z->next = b->index;
-				z = _b(a->prev);
-				b = a;
-				a = _b(z->next);
-				continue;
-			}
+		block * b = group;       //assert(b != NULL); //head element from group B
+		block * z = _b(b->prev); //assert(z != NULL); //tail element from AB
+		block * a = _b(z->next); //head element from group A
+
+		//assert(a != b);
+		
+		//if (debug) cout << "Merge " << group->index << " into " << z->index << endl;
+		
+		//assert(adjacent(z->index, b->index, bin));
+		
+		//Merge group B into group A
+		while (a != NULL && b != NULL)
+		{
+			////if (debug) cout << "Resolving " << a->index << " and " << b->index << endl;
 			
 			//Splice if {b} has a crossed pointer
 			if (b->prev != z->index)
 			{
-				//cout << "Splice B: " << b->index << '>' << b->prev << endl;
-				z->next = a->index;
-				z = _b(b->prev);
-				a = _b(z->next);
-				assert(a != b);
-				continue;
+				if (adjacent(b->prev, b->index, bin))
+				{
+					//if (debug) cout << "Splice " << b->index << " to " << b->prev << endl;
+					append(a,z);
+					z = _b(b->prev);
+					a = _b(z->next);
+					//assert(a != b);
+					++splices;
+					continue;
+				}
+				else
+				{
+					append(a,z);
+					//replace(group,b);
+					return b->index;
+				}
 			}
-			assert(a->prev == b->prev);
 
+			//Splice if {a} has a crossed pointer
+			if (a->prev != z->index)
+			{
+				if (adjacent(a->prev, a->index, bin))
+				{
+					//if (debug) cout << "Splice " << a->index << " to " << a->prev << endl;
+					append(b,z);
+					z = _b(a->prev);
+					b = a;
+					a = _b(z->next);
+					//assert(a != b);
+					++splices;
+					continue;
+				}
+				else
+				{
+					append(b,z);
+					//replace(group,a);
+					return a->index;
+				}
+			}
+			
+			//assert(a->prev == z->index);
+			//assert(b->prev == z->index);
+
+			//Find the better of the two reads
 			if (resolve(a,b))
 			{
-				z->next = a->index;
 				b->prev = a->index;
+				append(a,z);
 				z = a;
 				a = _b(a->next);
-				count_a++;
 			}
 			else
 			{
-				z->next = b->index;
 				a->prev = b->index;
+				append(b,z);
 				z = b;
 				b = _b(b->next);
-				count_b++;
 			}
-			//cout << "Appended " << z->index << endl;
-			//cout << "Calling to cascade with " << z->index << endl;
-			//cascade(z);
 		}
-		assert(false);
+		
+		//To get here, one (but not both) of the groups must be empty
+		//assert(a == NULL || b == NULL);
+		//assert(a != NULL || b != NULL);
+		
+		//Append the non-null group
+		//if (debug) cout << "Empty " << endl;
+		append(a == NULL ? b : a, z);
+		//remove(group);
+		++nulls;
+		return BLANK;
 	}
-	
-	//Determine if all characters in the string are the same
-	bool mono()
+
+	//Determine if two reads are in adjacent bin groups
+	inline bool adjacent(unsigned int a, unsigned int b, unsigned int bin)
 	{
-		for (unsigned int i=1; i<length; ++i)
-		{
-			if (sequence[i] != sequence[i-1]) return false;
-		}
-		return true;
+		//assert(a != b);
+		//assert(a != BLANK);
+		//assert(b != BLANK);
+		
+		a /= bin;
+		b /= bin;
+
+		a /= 2;
+		b /= 2;
+		
+		if (a != b) aborts++;
+		
+		return a == b;
 	}
 	
-	//Merge sort the blocks
+	//Merge sort using an array instead of a list
 	void sort(string &s, vector<int> &bks)
 	{
 		//Initialize
 		init(s);
 		
-		//No need to do anything if all characters are the same
-		//if (mono()) return;
+		cout << "Total length: " << length << endl;
 		
+		unsigned int end = length;
+	
 		//For each n^2 iteration
-		for (int bin=1; bin<length; bin*=2)
+		for (unsigned int bin = 1; bin < length; bin *= 2)
 		{
-			cout << "Sorting iteration: " << bin << endl;
-			//matrix();
-			
+			cout << "Sorting iteration " << bin << ": " << flush;
+	
+			//Walk through the list of groups and merge as many as possible
+			splices = 0;
+			nulls = 0;
+			appends = 0;
+			aborts = 0;
+			resolves = 0;
+			cascades = 0;
+			cascades2 = 0;
+			orphans = 0;
+			quicks = 0;
+			groups = 0;
+			ccount = 0;
+			bcount = 0;
+		
+			unsigned int npos = 0;
+			unsigned int hpos = 0;
+
 			block * node = NULL;
-			block * next = NULL;
 			block * hold = NULL;
-						
-			for (node = gfirst; node != NULL; node = next)
+			
+			for (npos = 0; npos < end; ++npos)
 			{
-				//assert(node->gnext != BLANK || node->gprev != BLANK);
-				next = _b(node->gnext);
-				//cout << "GROUP IS: " << node->index << " NEXT IS: " << ((next == NULL) ? -1 : next->index) << endl;
+				node = _b(heads[npos]);
 				
-				//Merge immediately if there is a trace (not an orphan)
+				//assert(node != NULL);
+				
+				//If the node has a trace then follow it immediately
 				if (node->prev != BLANK)
 				{
-					assert(node->gnext != BLANK || node->gprev != BLANK);
-					//cout << "PROBLEM Immediate merge: " << node->index << endl;
-					merge(node,bin);
+					//if (debug) cout << "Trace " << node->index << endl;
+					
+					if (adjacent(node->index, node->prev, bin))
+					{
+						++quicks;
+						heads[npos] = merge(node,bin);
+					}
+					else
+					{
+						//if (debug) cout << "Aborted merge as groups are not adjacent " << node->index << ' ' << node->prev << ' ' << bin << endl;
+					}
 				}
 				//Put the group on hold if possible (orphan)
 				else if (hold == NULL)
 				{
-					// if (gfirst->gnext == BLANK)
-					// {
-					// 	assert(false);
-					// }
-					// assert(node->gnext != BLANK || node->gprev != BLANK);
-					//cout << "Placed on hold: " << node->index << endl;
+					//if (debug) cout << "Hold " << node->index << endl;
 					hold = node;
+					hpos = npos;
 				}
 				//Find the winner of two orphans and merge
 				else
 				{
-					assert(node->gnext != BLANK || node->gprev != BLANK);
-					assert(hold->gnext != BLANK || hold->gprev != BLANK);
-					//dump(hold);dump(node);
-
-					//cout << "Pair of orphans: " << hold->index << '&' << node->index << endl;
 					//Catch a condition where cascade has given the held group a parent
-					if (hold->prev != node->prev)
+					if (hold->prev != BLANK)
 					{
+						if (adjacent(hold->index, hold->prev, bin))
+						{
+							heads[hpos] = merge(hold,bin);
+							++quicks;
+						}
 						hold = node;
+						hpos = npos;
 					}
 					else
 					{
-						merge(resolve(hold,node) ? node : hold, bin);
-						hold = NULL;
+						if (adjacent(node->index, hold->index, bin))
+						{
+							//if (debug) cout << "Pair " << node->index << endl;
+							++orphans;
+							
+							if (resolve(hold,node))
+							{
+								heads[npos] = merge(node,bin);
+							}
+							else
+							{
+								heads[hpos] = merge(hold,bin);
+							}
+							hold = NULL;
+						}
+						else
+						{
+							//if (debug) cout << "Aborted merge as groups are not adjacent" << endl;
+							hold = node;
+							hpos = npos;
+						}
 					}
 				}
 			}
-		}
-		assert(gfirst != NULL && gfirst->gnext == BLANK);
+			
+			//Rewrite, count and improve the master list
+			//TODO: find a way to incorporate this in the above list
+			unsigned int move = 0;
+			unsigned int temp = 0;
+			
+			for (unsigned int i=0; i<end; ++i)
+			{
+				if (heads[i] == BLANK) continue;
+				groups++;
+				temp = heads[i];
+				heads[i] = BLANK;
+				heads[move] = temp;
+				++move;
+			}
+			end = move;
 		
+			cout << " Groups: " << groups;
+			cout << " B:" << (bcount/1000000);
+			cout << " C:" << (ccount/1000000);
+			cout << " Appends:" << (appends/1000000);
+			cout << " Resolves:" << (resolves/1000000);
+			cout << " Cascades:" << (cascades/1000000);
+			cout << "+" << (cascades2/1000000);
+			cout << " Splices:" << (splices/1000000);
+			cout << " Aborts:" << (aborts/1000000);
+			cout << " Orphans:" << (orphans/1000000);
+			cout << " Quicks:" << (quicks/1000000);
+			cout << endl;
+		}
+	
 		bks.resize(length);
 
+		//Build the final collection of sorted blocks
 		unsigned int i = 0;
-		
-		for (block * p = gfirst; p != NULL; p = _b(p->next), ++i)
+	
+		for (block * p = _b(heads[0]); p != NULL; p = _b(p->next), ++i)
 		{
 			bks[i] = p->index;
 		}
-		
+			
+		//if (debug) matrix();
 		cout << "Finished" << endl;
 	}
 };
 
+
+
+
 /*
-- merge has to take care of deletion / replacement
+TODO:
+- in place list for managing the lists
+- must have a way to replace groups
+- must have a way to delete groups
+- list makes sense, but array uses less memory
+- array is harder to allocate
+- delete can be lazy, removing the groups with a condition check on the next pass
+- a group would be set for deletion if the prev's next == group index (already integrated)
+- problem might arise if an integrated group splices, then it would be seen as a group (instead of being deleted)
+- best way would be to just set the group value to something else on delete or replace
+- use delete or replace to set the group number properly. Lazy kill/copy on the next iteration
 
+- on the sort process, walk the array
+	- if the element is flagged for kill, write over it with the lext active group (when found)
+	- two travelling pointers, A to the left group, B to the right
+	- if a pointer hits a linked group, it immediately follows
+	- pointer merge is only done when the two groups are both orphans
+	
+	
+	
+- Dynamic rewriting to move elements as they need it
+- Don't do the rewrite after the traverse, do it as it proceeds
+- A group with a trace will either return:
+	- blank if fully integrated
+	- a tail if spliced beyond the current bin group
+	
+- If the return result is not a blank then the result should be written to the trail position and the trail advanced.
 
-
-00 plantenergy
-01 lantenergyp
-02 antenergypl
-03 ntenergypla
-04 tenergyplan
-05 energyplant
-06 nergyplante
-07 ergyplanten
-08 rgyplantene
-09 gyplantener
-10 yplantenetg
---------------
-01 lantenergyp
-00 plantenergy
-
-02 antenergypl
-03 ntenergypla
-
-05 energyplant
-04 tenergyplan
-
-07 ergyplanten
-06 nergyplante
-
-09 gyplantener
-08 rgyplantene
-
-10 yplantenetg
---------------
-02 antenergypl
-01 lantenergyp
-03 ntenergypla
-00 plantenergy
-
-05 energyplant
-07 ergyplanten
-06 nergyplante
-04 tenergyplan
-
-09 gyplantener
-08 rgyplantene
-10 yplantenetg
---------------
-02 antenergypl
-05 energyplant
-07 ergyplanten
-01 lantenergyp
-06 nergyplante
-03 ntenergypla
-00 plantenergy
-04 tenergyplan
-
-09 gyplantener
-08 rgyplantene
-10 yplantenetg
---------------
-02 antenergypl
-05 energyplant
-07 ergyplanten
-09 gyplantener
-01 lantenergyp
-06 nergyplante
-03 ntenergypla
-00 plantenergy
-08 rgyplantene
-04 tenergyplan
-10 yplantenetg
---------------
-plantenergy
-ltnrpeayeng
-
+- When comparing two orphans, there may be no write needed if there is a tail left
 */
+
+// //Merge sort the blocks
+// void sort_original(string &s, vector<int> &bks)
+// {
+// 	//Initialize
+// 	init(s);
+// 	
+// 	// if (debug)
+// 	// {
+// 	// 	for (int i=0; i<length; ++i)
+// 	// 	{
+// 	// 		cout << i << " - " << blockseq(i) << endl;
+// 	// 	}
+// 	// }
+// 	
+// 	//For each n^2 iteration
+// 	unsigned int bin = 1;
+// 	
+// 	cout << "Total length: " << length << endl;
+// 	
+// 	while (gfirst->gnext != BLANK)
+// 	{
+// 		cout << "Sorting iteration " << bin << ": " << flush;
+// 		//if (debug) matrix();
+// 		
+// 		splices = 0;
+// 		nulls = 0;
+// 		appends = 0;
+// 		aborts = 0;
+// 		resolves = 0;
+// 		cascades = 0;
+// 		cascades2 = 0;
+// 		orphans = 0;
+// 		quicks = 0;
+// 		groups = 0;
+// 		ccount = 0;
+// 		bcount = 0;
+// 		
+// 		block * node = NULL;
+// 		block * next = NULL;
+// 		block * hold = NULL;
+// 
+// 		for (node = gfirst; node != NULL; node = _b(node->gnext))
+// 		{
+// 			groups++;
+// 		}
+// 		
+// 		for (node = gfirst; node != NULL; node = next)
+// 		{
+// 			next = _b(node->gnext);
+// 			
+// 			//Merge immediately if there is a trace (not an orphan)
+// 			if (node->prev != BLANK)
+// 			{
+// 				//if (debug) cout << "Trace " << node->index << endl;
+// 				
+// 				if (adjacent(node->index, node->prev, bin))
+// 				{
+// 					++quicks;
+// 					merge(node,bin);
+// 				}
+// 				else
+// 				{
+// 					//if (debug) cout << "Aborted merge as groups are not adjacent " << node->index << ' ' << node->prev << ' ' << bin << endl;
+// 				}
+// 			}
+// 			//Put the group on hold if possible (orphan)
+// 			else if (hold == NULL)
+// 			{
+// 				//if (debug) cout << "Hold " << node->index << endl;
+// 				hold = node;
+// 			}
+// 			//Find the winner of two orphans and merge
+// 			else
+// 			{
+// 				//assert(node->gnext != BLANK || node->gprev != BLANK);
+// 				//assert(hold->gnext != BLANK || hold->gprev != BLANK);
+// 
+// 				//Catch a condition where cascade has given the held group a parent
+// 				if (hold->prev != BLANK)
+// 				{
+// 					next = hold;
+// 					hold = NULL;
+// 				}
+// 				else
+// 				{
+// 					if (adjacent(node->index, hold->index, bin))
+// 					{
+// 						//if (debug) cout << "Pair " << node->index << endl;
+// 						++orphans;
+// 						
+// 						//assert(node->prev == BLANK);
+// 						//assert(hold->prev == BLANK);
+// 						
+// 						if (resolve(hold,node))
+// 						{
+// 							merge(node,bin);
+// 							next = hold;
+// 						}
+// 						else
+// 						{
+// 							merge(hold,bin);
+// 							next = node;
+// 						}
+// 						hold = NULL;
+// 					}
+// 					else
+// 					{
+// 						//if (debug) cout << "Aborted merge as groups are not adjacent" << endl;
+// 						hold = node;
+// 					}
+// 				}
+// 			}
+// 		}
+// 		
+// 		//Increase the bin size
+// 		bin = (length / 2 > bin) ? 2*bin : length;
+// 		
+// 		cout << " Groups: " << groups;
+// 		cout << " B:" << (bcount/1000000);
+// 		cout << " C:" << (ccount/1000000);
+// 		cout << " Appends:" << (appends/1000000);
+// 		cout << " Resolves:" << (resolves/1000000);
+// 		cout << " Cascades:" << (cascades/1000000);
+// 		cout << "+" << (cascades2/1000000);
+// 		cout << " Splices:" << (splices/1000000);
+// 		cout << " Aborts:" << (aborts/1000000);
+// 		cout << " Orphans:" << (orphans/1000000);
+// 		cout << " Quicks:" << (quicks/1000000);
+// 		cout << endl;
+// 	}
+// 	//assert(gfirst != NULL);
+// 	////assert(gfirst->gnext == BLANK);
+// 	
+// 	bks.resize(length);
+// 
+// 	unsigned int i = 0;
+// 	
+// 	for (block * p = gfirst; p != NULL; p = _b(p->next), ++i)
+// 	{
+// 		bks[i] = p->index;
+// 	}
+// 	
+// 	//if (debug) matrix();
+// 	cout << "Finished" << endl;
+// }
+
+
