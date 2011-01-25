@@ -1863,14 +1863,14 @@ struct BlockSort
 			{
 				if (_c(p1) < _c(p2))
 				{
+					if (diff - b->diff > 2) flags[b->index] = true;
 					b->diff = diff;
 					b->prev = a->index;
-					flags[b->index] = true;
 					return true;
 				}
+				if (diff - a->diff > 2) flags[a->index] = true;
 				a->diff = diff;
 				a->prev = b->index;
-				flags[a->index] = true;
 				return false;
 			}
 			
