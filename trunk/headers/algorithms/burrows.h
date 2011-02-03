@@ -6,7 +6,7 @@
  */
 
 /*			
-   plantenergy       sorted        A         B
+    original         sorted        A         B
 -----------------------------------------------
  0 plantenergy     antenergypl     a.........l
  1 lantenergyp     energyplant     e.........t
