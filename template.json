@@ -1,7 +1,7 @@
 /*****************************************************************************
 
 	NOTE: do not modify or use this file directly, make a copy instead
-	NOTE: delete this comment section from from your copy
+	NOTE: delete this comment section from your copy
 	
 	Sample configuration file for running the entire pipeline in one go.
 	In here, you provide information about the source data (a single file
