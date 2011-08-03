@@ -88,7 +88,7 @@ namespace ReadSlam
 		//Trim adapter sequence from the end of the read
 		void trim_on_adapter(ReadFastQ& f)
 		{
-			//string adapter = "AGATCGGAAGAGCTCGTATGC";
+			//string adapter = "AGATCGGAAGAGCTCGTATGCCGTCTTCTGCTTG";
 			
 			int size_adapter = adapter.size();
 			int size_read = f.sequence.size();
@@ -100,7 +100,11 @@ namespace ReadSlam
 				for (int j=0; j<size_adapter; ++j)
 				{
 					if (i+j >= size_read) break;
-					if (f.sequence[i+j] != adapter[j]) { match = false; break; }
+					if (f.sequence[i+j] != adapter[j])
+					{ 
+						match = false; 
+						break;
+					}
 				}
 				if (match)
 				{
