@@ -9,5 +9,5 @@ int main (int argc, char * const argv[])
 		exit(0);
 	}
 	ReadSlam::PreProcessor processor;
-	processor.trim(argv[1], argv[2][0], argv[3], argv[4]);
+	processor.trim(argv[1], (char)atoi(argv[2]), argv[3], argv[4]);
 }
