@@ -16,9 +16,10 @@ namespace ReadSlam
 		int trimmed_adapter;
 		int trimmed_quality;
 		string adapter;
+		char threshold;
 		
 		//Trim reads in a FastQ input file, writing to a FastQ output file
-		void trim(string adapter, string infile, string outfile)
+		void trim(string adapter, char threshold, string infile, string outfile)
 		{
 			before = 0;
 			after = 0;
@@ -26,6 +27,7 @@ namespace ReadSlam
 			trimmed_adapter = 0;
 			trimmed_quality = 0;
 			this->adapter = adapter;
+			this->threshold = threshold + 33; //phred score
 			
 			ifstream in;
 			in.open(infile.c_str());
@@ -66,14 +68,14 @@ namespace ReadSlam
 		//Trim runs of low quality calls from the end of a read.
 		//phred 33: # maps to a quality of 2
 		//illum 64: P maps to a quality of 16
-		void trim_on_quality2(ReadFastQ& f)
+		void trim_on_quality(ReadFastQ& f)
 		{
 			//Count the number of bases from the 3' end that are below threshold
 			int c = 0;
 			
 			for (int i = f.qualities.size() - 1; i >= 0; --i)
 			{
-				if (f.qualities[i] > 35) break;
+				if (f.qualities[i] > threshold) break;
 				c++;
 			}
 			
@@ -87,7 +89,7 @@ namespace ReadSlam
 		}
 		
 		//Trim at the first bad call
-		void trim_on_quality(ReadFastQ& f)
+		void trim_on_quality_aggressive(ReadFastQ& f)
 		{
 			for (int i = 0; i<f.qualities.size(); i++)
 			{
@@ -130,19 +132,6 @@ namespace ReadSlam
 					break;
 				}
 			}
-			
-			// for (int i=adapter.size(), len=f.sequence.size(); i > 2; --i)
-			// {
-			// 	if (i > len) i = len;
-			// 	
-			// 	if (f.sequence.substr(len-i, i) == adapter.substr(0,i))
-			// 	{
-			// 		f.sequence = f.sequence.substr(0, len-i);
-			// 		f.qualities = f.qualities.substr(0, len-i);
-			// 		trimmed_adapter++;
-			// 		return;
-			// 	}
-			// }
 		}
 		
 		//Convert cytosines in the read into thymines
