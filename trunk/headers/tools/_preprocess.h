@@ -87,7 +87,7 @@ namespace ReadSlam
 		}		
 		
 		//Trim adapter sequence from the end of the read
-		void trim_on_adapter(ReadFastQ& f)
+		void trim_on_adapter(ReadFastQ& f) 
 		{
 			//string adapter = "AGATCGGAAGAGCTCGTATGCCGTCTTCTGCTTG";
 			
