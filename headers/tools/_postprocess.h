@@ -50,15 +50,15 @@ namespace ReadSlam
 			save(outfile);
 			
 			//For debugging
-			// cout << "Total: " << total << endl;
-			// cout << "Not found: " << not_found << endl;	
-			// cout << "Unique: " << unique << endl;
-			// cout << "Multi: " << multi << endl;
-			// cout << "Fresh: " << fresh << endl;
-			// cout << "Illogical: " << illogical << endl;
-			// cout << "Bumped: " << bumped << endl;
-			// cout << "Skipped: " << skipped << endl;
-			// cout << "Merged: " << merged << endl;	
+			cout << "Total: " << total << endl;
+			cout << "Not found: " << not_found << endl;	
+			cout << "Unique: " << unique << endl;
+			cout << "Multi: " << multi << endl;
+			cout << "Fresh: " << fresh << endl;
+			cout << "Illogical: " << illogical << endl;
+			cout << "Bumped: " << bumped << endl;
+			cout << "Skipped: " << skipped << endl;
+			cout << "Merged: " << merged << endl;	
 			cout << unique << '\t' << multi << endl;
 		}
 		
