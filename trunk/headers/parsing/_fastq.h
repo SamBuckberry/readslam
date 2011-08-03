@@ -51,11 +51,11 @@ namespace ReadSlam
 							return false; 
 						}
 						
-						//Replace spaces in the ID with colons
-						for (int j=0; j<line.length(); j++)
-						{
-							if (line[j] == ' ') line[j] = ':';
-						}
+						// //Replace spaces in the ID with colons
+						// for (int j=0; j<line.length(); j++)
+						// {
+						// 	if (line[j] == ' ') line[j] = ':';
+						// }
 						sequence_header = line;
 					break;
 					
