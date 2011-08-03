@@ -46,7 +46,9 @@ namespace ReadSlam
 				if (f.sequence.size() <= 20)
 				{
 					f.sequence  = "NNNNNNNNNNNNNNNNNNNN";
-					f.qualities = "BBBBBBBBBBBBBBBBBBBB";
+					//f.qualities = "BBBBBBBBBBBBBBBBBBBB"; //old 64 scoring
+					f.qualities = "####################"; //phred 33 scoring
+
 				}
 				f.save(out);
 				after += f.sequence.size();
@@ -61,13 +63,16 @@ namespace ReadSlam
 			cout << (after / count) << endl;
 		}
 		
-		//Trim bases from the end of the read based on poor quality
+		//Trim runs of low quality calls from the end of a read.
 		void trim_on_quality(ReadFastQ& f)
 		{
 			for (int i = f.qualities.size(); i > 0; --i)
 			{
-				//(ord($char) - 64)
-				if (f.qualities[i-1] > 'P')
+				//This was the older phred 64. P mapped to a quality of 16
+				//if (f.qualities[i-1] > 'P')
+
+				//phred 33: # maps to 35 which is a quality of 2
+				if (f.qualities[i-1] > '#')
 				{
 					if (i < f.qualities.size())
 					{
@@ -76,7 +81,7 @@ namespace ReadSlam
 						trimmed_quality++;
 					}
 					return;
-				}
+				}				
 			}
 		}
 		
