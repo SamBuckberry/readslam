@@ -66,7 +66,7 @@ namespace ReadSlam
 		//Trim runs of low quality calls from the end of a read.
 		//phred 33: # maps to a quality of 2
 		//illum 64: P maps to a quality of 16
-		void trim_on_quality(ReadFastQ& f)
+		void trim_on_quality2(ReadFastQ& f)
 		{
 			//Count the number of bases from the 3' end that are below threshold
 			int c = 0;
@@ -84,7 +84,22 @@ namespace ReadSlam
 				f.qualities = f.qualities.substr(0, f.qualities.length() - c);
 				trimmed_quality++;
 			}
-		}		
+		}
+		
+		//Trim at the first bad call
+		void trim_on_quality(ReadFastQ& f)
+		{
+			for (int i = 0; i<f.qualities.size(); i++)
+			{
+				if (f.qualities[i] > 35) continue;
+
+				f.sequence = f.sequence.substr(0,i);
+				f.qualities = f.qualities.substr(0,i);
+				trimmed_quality++;
+
+				break;
+			}
+		}
 		
 		//Trim adapter sequence from the end of the read
 		void trim_on_adapter(ReadFastQ& f) 
