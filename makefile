@@ -2,7 +2,7 @@ all:
 	@echo "READSLAM: Compilation started"
 	g++ -O3 -o ./bin/preprocess ./headers/main/preprocess.cpp
 	g++ -O3 -o ./bin/postprocess ./headers/main/postprocess.cpp
-	g++ -O3 -o ./bin/mapper ./headers/main/map.cpp
+	#g++ -O3 -o ./bin/mapper ./headers/main/map.cpp
 	g++ -O3 -o ./bin/final2slam ./headers/main/final2slam.cpp
 	g++ -O3 -o ./bin/sort_name ./headers/main/sort_name.cpp
 	g++ -O3 -o ./bin/sort_sequence ./headers/main/sort_sequence.cpp
