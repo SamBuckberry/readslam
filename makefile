@@ -18,6 +18,7 @@ all:
 	g++ -O3 -o ./bin/test ./headers/main/test2.cpp	
 	g++ -O3 -o ./bin/lookup ./headers/tools/_lookup.cpp
 	g++ -O3 -o ./bin/trim ./headers/main/trim.cpp
+	g++ -O3 -o ./bin/trim_no_ch_drop ./headers/main/trim_no_ch_drop.cpp	
 	g++ -O3 -o ./bin/hammer ./headers/main/hammer.cpp
 	g++ -O3 -o ./bin/benjamini ./headers/main/benjamini.cpp
 	g++ -O3 -o ./bin/mc ./headers/main/mc.cpp
