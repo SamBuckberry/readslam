@@ -103,30 +103,21 @@ namespace ReadSlam
 				
 				//Apply filtering rules
 				int error = 0;
-				int noncg = 0;
 				int i = 0;
 				
 				for (i=0; i<len; ++i)
 				{
 					if      (ref[i] == 'C' && read.sequence[i] == 'T') continue;
 					else if (ref[i] == 'C' && read.sequence[i] != 'C') error++;
-					else if (ref[i] == 'C' && read.sequence[i] == 'C' && ref[i+1] != 'G') noncg++;
 					else if (ref[i] == read.sequence[i]) continue;
 					else    error++;
 					
 					if (error > 3) break;
-					if (noncg > 3) break;
 				}
 				
 				//Trim a read with errors
 				if (error > 3)
 				{
-					// cout << '\n' << "Trimmed" << '\n';
-					// cout << read.qualities << '\n';
-					// cout << read.sequence << '\n';
-					// cout << ref << '\n';
-					// cout << read.sequence.substr(0,i) << endl;
-
 					read.sequence = read.sequence.substr(0,i);
 
 					if (read.strand == "-")
@@ -135,16 +126,6 @@ namespace ReadSlam
 					}
 					trimmed++;
 				}
-				
-				// //Save the read if it is good enough
-				// if (noncg < 4 && read.sequence.size() > 20)
-				// {
-				// 	read.save(out);
-				// }
-				// else
-				// {
-				// 	dropped++;
-				// }
 				
 				//Save the read if it is good enough
 				if (read.sequence.size() > 20)
@@ -155,14 +136,6 @@ namespace ReadSlam
 				{
 					dropped++;
 				}				
-				
-				// else
-				// {
-				// 	cout << '\n' << "Dropped" << '\n';
-				// 	cout << read.qualities << '\n';
-				// 	cout << read.sequence << '\n';
-				// 	cout << ref << endl;
-				// }
 			}
 			out.close();
 			in.close();
