@@ -65,3 +65,8 @@ todo:
 done:
 	g++ -O3 -o ./bin/parse ./headers/main/parse.cpp
 	
+hmc:
+	g++ -O3 -o ./bin/preprocess_adapter_trim_only ./headers/main/preprocess_adapter_trim_only.cpp
+	g++ -O3 -o ./bin/hmcip_resolve ./headers/main/hmcip_resolve.cpp
+	
+	
