@@ -68,6 +68,5 @@ done:
 hmc:
 	g++ -O3 -o ./bin/preprocess_adapter_trim_only ./headers/main/preprocess_adapter_trim_only.cpp
 	g++ -O3 -o ./bin/hmcip_resolve ./headers/main/hmcip_resolve.cpp
-	g++ -O3 -o ./bin/hmcip_resolve2 ./headers/main/hmcip_resolve2.cpp
 	
 	
