@@ -182,19 +182,19 @@ namespace ReadSlam
 				unsigned int reads_ch_single;
 			} stats;
 			
-			stats.cg;
-			stats.ch;
+			stats.cg = 0;
+			stats.ch = 0;
 			
-			stats.mcg;
-			stats.mch;
+			stats.mcg = 0;
+			stats.mch = 0;
 			
-			stats.reads;
-			stats.reads_error;
-			stats.reads_ambig;
-			stats.reads_cg;
-			stats.reads_ch;
-			stats.reads_cg_single;
-			stats.reads_ch_single;
+			stats.reads = 0;
+			stats.reads_error = 0;
+			stats.reads_ambig = 0;
+			stats.reads_cg = 0;
+			stats.reads_ch = 0;
+			stats.reads_cg_single = 0;
+			stats.reads_ch_single = 0;
 			
 			while (read.load(in))
 			{
