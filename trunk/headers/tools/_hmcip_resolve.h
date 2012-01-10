@@ -75,19 +75,19 @@ namespace ReadSlam
 			ofstream out (outfile.c_str());
 			
 			BasicRead read;
-			int progress;
+			int progress = 0;
 			
 			//Counts
-			int count_cg;
-			int count_ch;
+			int count_cg = 0;
+			int count_ch = 0;
 			
-			int count_mcg;
-			int count_mch;
+			int count_mcg = 0;
+			int count_mch = 0;
 			
-			int count_reads;
-			int count_reads_ambig;
-			int count_reads_cg;
-			int count_reads_ch;
+			int count_reads = 0;
+			int count_reads_ambig = 0;
+			int count_reads_cg = 0;
+			int count_reads_ch = 0;
 			
 			while (read.load(in))
 			{
@@ -111,8 +111,8 @@ namespace ReadSlam
 				}
 				
 				//Generate counts
-				int cg;
-				int ch;
+				int cg = 0;
+				int ch = 0;
 				
 				for (int i=0; i<len; ++i)
 				{
@@ -163,7 +163,7 @@ namespace ReadSlam
 			ifstream in (infile.c_str());
 			
 			BasicRead read;
-			int progress;
+			int progress = 0;
 			
 			//Counts
 			struct s {
@@ -218,8 +218,8 @@ namespace ReadSlam
 				}
 				
 				//Generate stats
-				int cg;
-				int ch;
+				int cg = 0;
+				int ch = 0;
 				
 				for (int i=0; i<fraglen; ++i)
 				{
