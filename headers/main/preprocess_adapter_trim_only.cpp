@@ -2,12 +2,12 @@
 
 int main (int argc, char * const argv[])
 {
-	if (argc != 5)
+	if (argc != 6)
 	{
-		cout << "Usage: ./preprocess adapter threshold infile outfile" << endl;
-		cout << "Example: ./preprocess AGATCGGAAGAGCTCGTATGC 16 /tmp/reads.fastq /tmp/trimmed.fastq" << endl;
+		cout << "Usage: ./preprocess adapter min_adapter_length qual_threshold infile outfile" << endl;
+		cout << "Example: ./preprocess AGATCGGAAGAGCTCGTATGC 6 16 /tmp/reads.fastq /tmp/trimmed.fastq" << endl;
 		exit(0);
 	}
 	ReadSlam::PreProcessor processor;
-	processor.trim(argv[1], (char)atoi(argv[2]), argv[3], argv[4]);
+	processor.trim(argv[1], atoi(argv[2]), (char)atoi(argv[3]), argv[4], argv[5]);
 }

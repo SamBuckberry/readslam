@@ -15,14 +15,16 @@ namespace ReadSlam
 		string adapter;
 		char threshold;
 		bool touched;
+		int min_adapter;
 		
 		//Trim reads in a FastQ input file, writing to a FastQ output file
-		void trim(string adapter, char threshold, string infile, string outfile)
+		void trim(string adapter, int min_adapter, char threshold, string infile, string outfile)
 		{
 			count = 0;
 			kept = 0;
 			this->adapter = adapter;
 			this->threshold = threshold + 33; //phred score
+			this->min_adapter = min_adapter;
 			
 			ifstream in;
 			in.open(infile.c_str());
@@ -108,7 +110,7 @@ namespace ReadSlam
 			int size_adapter = adapter.size();
 			int size_read = f.sequence.size();
 
-			for (int i=0; i<size_read - 3; ++i)
+			for (int i=0; i<size_read - min_adapter; ++i)
 			{
 				bool match = true;
 				
