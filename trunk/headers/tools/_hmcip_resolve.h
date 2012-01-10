@@ -75,19 +75,19 @@ namespace ReadSlam
 			ofstream out (outfile.c_str());
 			
 			BasicRead read;
-			int progress = 0;
+			int progress;
 			
 			//Counts
-			int count_cg = 0;
-			int count_ch = 0;
+			int count_cg;
+			int count_ch;
 			
-			int count_mcg = 0;
-			int count_mch = 0;
+			int count_mcg;
+			int count_mch;
 			
-			int count_reads = 0;
-			int count_reads_ambig = 0;
-			int count_reads_cg = 0;
-			int count_reads_ch = 0;
+			int count_reads;
+			int count_reads_ambig;
+			int count_reads_cg;
+			int count_reads_ch;
 			
 			while (read.load(in))
 			{
@@ -111,8 +111,8 @@ namespace ReadSlam
 				}
 				
 				//Generate counts
-				int cg = 0;
-				int ch = 0;
+				int cg;
+				int ch;
 				
 				for (int i=0; i<len; ++i)
 				{
@@ -148,6 +148,116 @@ namespace ReadSlam
 			cout << "hmCH reads: " << count_reads_ch << endl;
 			cout << "mCG / CG sites: " << count_mcg << " / " << count_cg << endl;
 			cout << "mCH / CH sites: " << count_mch << " / " << count_ch << endl;
+		}
+		
+		//Take a file of reads and generate stats
+		void process(string infile, int fraglen)
+		{
+			//Sanity check
+			if (fraglen > 200)
+			{
+				cerr << "Fragment length must be <= 200" << endl;
+				return;
+			}
+			
+			ifstream in (infile.c_str());
+			
+			BasicRead read;
+			int progress;
+			
+			//Counts
+			struct s {
+				unsigned int cg;
+				unsigned int ch;
+				
+				unsigned int mcg;
+				unsigned int mch;
+				
+				unsigned int reads;
+				unsigned int reads_error;
+				unsigned int reads_ambig;
+				unsigned int reads_cg;
+				unsigned int reads_ch;
+				unsigned int reads_cg_single;
+				unsigned int reads_ch_single;
+			} stats;
+			
+			stats.cg;
+			stats.ch;
+			
+			stats.mcg;
+			stats.mch;
+			
+			stats.reads;
+			stats.reads_error;
+			stats.reads_ambig;
+			stats.reads_cg;
+			stats.reads_ch;
+			stats.reads_cg_single;
+			stats.reads_ch_single;
+			
+			while (read.load(in))
+			{
+				if (++progress % 100000 == 0)
+				{
+					cout << " " << progress << '\r' << flush;
+				}
+				string ref;
+				int len = read.sequence.size();
+				if (len <= 0) continue;
+				
+				if (read.strand == "+")
+				{
+					if (read.position + fraglen + 1 >= genome[read.assembly].size-2) continue;
+					ref = genome[read.assembly].forward.substr(read.position,fraglen+1);
+				}
+				else
+				{
+					if (read.position < fraglen) continue;
+					ref = DNA::reverse(genome[read.assembly].reverse.substr(read.position-1,fraglen+1));
+				}
+				
+				//Generate stats
+				int cg;
+				int ch;
+				
+				for (int i=0; i<fraglen; ++i)
+				{
+					if (ref[i] == 'C')
+					{
+						(ref[i+1] == 'G') ? stats.cg++ : stats.ch++;
+						
+						if (i < len)
+						{
+							if (read.sequence[i] != 'C') continue;
+						}
+						(ref[i+1] == 'G') ? cg++ : ch++;
+					}
+				}
+				stats.mcg += cg;
+				stats.mch += ch;
+				
+				stats.reads++;
+
+				if (cg > 0 && ch > 0) stats.reads_ambig++;
+				if (cg == 0 && ch == 0) stats.reads_error++;
+				if (cg > 0 && ch == 0) stats.reads_cg++;
+				if (ch > 0 && cg == 0) stats.reads_ch++;
+				if (cg == 1 && ch == 0) stats.reads_cg_single++;
+				if (ch == 1 && cg == 0) stats.reads_ch_single++;
+			}
+			in.close();
+			
+			//Print results
+			cout << "Total reads: " << stats.reads << endl;
+			cout << "Error reads: " << stats.reads_error << endl;
+			cout << "Ambiguous reads: " << stats.reads_ambig << endl;
+			cout << "hmCG reads: " << stats.reads_cg << endl;
+			cout << "hmCH reads: " << stats.reads_ch << endl;
+			cout << "hmCG reads single: " << stats.reads_cg_single << endl;
+			cout << "hmCH reads single: " << stats.reads_ch_single << endl;
+			cout << "mCG / CG sites: " << stats.mcg << " / " << stats.cg << endl;
+			cout << "mCH / CH sites: " << stats.mch << " / " << stats.ch << endl;
 		}
 	};
 }
