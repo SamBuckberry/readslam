@@ -111,7 +111,7 @@ namespace ReadSlam
 				}
 				
 				//Generate stats
-				int mcg = 0;
+				int mcg = 0; 
 				int mch = 0;
 				
 				for (int i=0; i<reflen; ++i)
