@@ -101,12 +101,12 @@ namespace ReadSlam
 				
 				if (read.strand == "+")
 				{
-					if (read.position + reflen + 1 >= genome[read.assembly].size-2) continue;
+					if (read.position + reflen + 1 >= genome[read.assembly].size - 5) continue;
 					ref = genome[read.assembly].forward.substr(read.position,reflen+1);
 				}
 				else
 				{
-					if (read.position <= reflen + 1) continue;
+					if (read.position <= reflen + 5) continue;
 					ref = DNA::reverse(genome[read.assembly].reverse.substr(read.position+len-reflen-1,reflen+1));
 				}
 				
