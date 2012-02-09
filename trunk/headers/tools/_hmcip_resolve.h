@@ -96,24 +96,25 @@ namespace ReadSlam
 				string ref;
 				int len = read.sequence.size();
 				if (len <= 0) continue;
-				if (fraglen < len) fraglen = len;
+				
+				int reflen = fraglen > len ? fraglen : len;
 				
 				if (read.strand == "+")
 				{
-					if (read.position + fraglen + 1 >= genome[read.assembly].size-2) continue;
-					ref = genome[read.assembly].forward.substr(read.position,fraglen+1);
+					if (read.position + reflen + 1 >= genome[read.assembly].size-2) continue;
+					ref = genome[read.assembly].forward.substr(read.position,reflen+1);
 				}
 				else
 				{
-					if (read.position < fraglen) continue;
-					ref = DNA::reverse(genome[read.assembly].reverse.substr(read.position-1,fraglen+1));
+					if (read.position <= reflen + 1) continue;
+					ref = DNA::reverse(genome[read.assembly].reverse.substr(read.position+len-reflen-1,reflen+1));
 				}
 				
 				//Generate stats
 				int mcg = 0;
 				int mch = 0;
 				
-				for (int i=0; i<fraglen; ++i)
+				for (int i=0; i<reflen; ++i)
 				{
 					if (ref[i] == 'C')
 					{
