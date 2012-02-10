@@ -83,6 +83,13 @@ namespace ReadSlam
 			unsigned int stats_reads_cg_single = 0;
 			unsigned int stats_reads_ch_single = 0;
 			
+			//Create outfiles
+			string outfile_cg = infile + "_unambiguous_cg";
+			string outfile_ch = infile + "_unambiguous_ch";
+			
+			ofstream out_cg (outfile_cg);
+			ofstream out_ch (outfile_ch);
+			
 			//Process reads from the file
 			ifstream in (infile.c_str());
 			BasicRead read;
@@ -142,6 +149,10 @@ namespace ReadSlam
 				if (mcg == 0 && mch  > 0) stats_reads_ch++;
 				if (mcg == 1 && mch == 0) stats_reads_cg_single++;
 				if (mcg == 0 && mch == 1) stats_reads_ch_single++;
+				
+				//Save reads if needed
+				if (mcg  > 0 && mch == 0) read.save(out_cg);
+				if (mcg == 0 && mch  > 0) read.save(out_ch);
 			}
 			in.close();
 			
