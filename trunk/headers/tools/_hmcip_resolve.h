@@ -100,7 +100,7 @@ namespace ReadSlam
 				int reflen = fraglen > len ? fraglen : len;
 				
 				//Skip if there might be an out of range error
-				int a = (read.strand == '+') ? read.position : read.position + len - reflen - 1;
+				int a = (read.strand == "+") ? read.position : read.position + len - reflen - 1;
 				int b = a + reflen + 1;
 
 				if (a < 0 || b >= genome[read.assembly].size) continue;
