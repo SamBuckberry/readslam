@@ -91,7 +91,7 @@ namespace ReadSlam
 			{
 				if (++progress % 100000 == 0)
 				{
-					cout << " " << progress << '\r' << flush;
+					cout << "  " << progress << '\r' << flush;
 				}
 				string ref;
 				int len = read.sequence.size();
@@ -99,14 +99,16 @@ namespace ReadSlam
 				
 				int reflen = fraglen > len ? fraglen : len;
 				
+				//Skip if there might be an out of range error
+				if (read.position + reflen + 1 >= genome[read.assembly].size) continue;
+				if (read.position + len <= reflen + 1) continue;
+				
 				if (read.strand == "+")
 				{
-					if (read.position + reflen + 1 >= genome[read.assembly].size - 5) continue;
 					ref = genome[read.assembly].forward.substr(read.position,reflen+1);
 				}
 				else
 				{
-					if (read.position <= reflen + 5) continue;
 					ref = DNA::reverse(genome[read.assembly].reverse.substr(read.position+len-reflen-1,reflen+1));
 				}
 				
