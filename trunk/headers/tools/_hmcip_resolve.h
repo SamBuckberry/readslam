@@ -100,16 +100,18 @@ namespace ReadSlam
 				int reflen = fraglen > len ? fraglen : len;
 				
 				//Skip if there might be an out of range error
-				if (read.position + reflen + 1 >= genome[read.assembly].size) continue;
-				if (read.position + len <= reflen + 1) continue;
+				int a = (read.strand == '+') ? read.position : read.position + len - reflen - 1;
+				int b = a + reflen + 1;
+
+				if (a < 0 || b >= genome[read.assembly].size) continue;
 				
 				if (read.strand == "+")
 				{
-					ref = genome[read.assembly].forward.substr(read.position,reflen+1);
+					ref = genome[read.assembly].forward.substr(a,reflen+1);
 				}
 				else
 				{
-					ref = DNA::reverse(genome[read.assembly].reverse.substr(read.position+len-reflen-1,reflen+1));
+					ref = DNA::reverse(genome[read.assembly].reverse.substr(a,reflen+1));
 				}
 				
 				//Generate stats
