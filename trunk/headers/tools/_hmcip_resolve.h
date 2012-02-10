@@ -87,8 +87,8 @@ namespace ReadSlam
 			string outfile_cg = infile + "_unambiguous_cg";
 			string outfile_ch = infile + "_unambiguous_ch";
 			
-			ofstream out_cg (outfile_cg);
-			ofstream out_ch (outfile_ch);
+			ofstream out_cg (outfile_cg.c_str());
+			ofstream out_ch (outfile_ch.c_str());
 			
 			//Process reads from the file
 			ifstream in (infile.c_str());
