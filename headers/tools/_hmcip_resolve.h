@@ -122,9 +122,20 @@ namespace ReadSlam
 				int mcg = 0; 
 				int mch = 0;
 				int c = 0;
+				int mismatches = 0;
 				
 				for (int i=0; i<reflen; ++i)
 				{
+					if (i < len)
+					{
+						if (ref[i] != read.sequence[i])
+						{
+							mismatches++;
+							
+							if (ref[i] == 'C' && read.sequence[i] == 'T') mismatches--;
+						}
+					}
+					
 					if (ref[i] == 'C')
 					{
 						c++;
@@ -158,7 +169,8 @@ namespace ReadSlam
 					<< "\t" << c
 					<< "\t" << mcg
 					<< "\t" << mch
-				<< "\n";
+					<< "\t" << mismatches
+				<< endl;
 			}
 			in.close();
 			out.close();
