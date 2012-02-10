@@ -170,7 +170,7 @@ namespace ReadSlam
 					<< "\t" << mcg
 					<< "\t" << mch
 					<< "\t" << mismatches
-				<< endl;
+				<< "\n";
 			}
 			in.close();
 			out.close();
