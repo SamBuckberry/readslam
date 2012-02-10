@@ -155,6 +155,8 @@ namespace ReadSlam
 				if (mcg == 0 && mch  > 0) read.save(out_ch);
 			}
 			in.close();
+			out_cg.close();
+			out_ch.close();
 			
 			//Print results
 			cout << "Total reads: " << stats_reads << endl;
