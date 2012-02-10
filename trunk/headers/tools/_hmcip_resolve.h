@@ -84,11 +84,8 @@ namespace ReadSlam
 			unsigned int stats_reads_ch_single = 0;
 			
 			//Create outfiles
-			string outfile_cg = infile + "_unambiguous_cg";
-			string outfile_ch = infile + "_unambiguous_ch";
-			
-			ofstream out_cg (outfile_cg.c_str());
-			ofstream out_ch (outfile_ch.c_str());
+			string outfile = infile + "_counted";
+			ofstream out (outfile.c_str());
 			
 			//Process reads from the file
 			ifstream in (infile.c_str());
@@ -124,11 +121,14 @@ namespace ReadSlam
 				//Generate stats
 				int mcg = 0; 
 				int mch = 0;
+				int c = 0;
 				
 				for (int i=0; i<reflen; ++i)
 				{
 					if (ref[i] == 'C')
 					{
+						c++;
+						
 						(ref[i+1] == 'G') ? stats_cg++ : stats_ch++;
 						
 						if (i < len)
@@ -150,13 +150,18 @@ namespace ReadSlam
 				if (mcg == 1 && mch == 0) stats_reads_cg_single++;
 				if (mcg == 0 && mch == 1) stats_reads_ch_single++;
 				
-				//Save reads if needed
-				if (mcg  > 0 && mch == 0) read.save(out_cg);
-				if (mcg == 0 && mch  > 0) read.save(out_ch);
+				//Write information to the outfile
+				out << read.assembly
+					<< "\t" << read.strand
+					<< "\t" << read.position
+					<< "\t" << read.sequence
+					<< "\t" << c
+					<< "\t" << mcg
+					<< "\t" << mch
+				<< "\n";
 			}
 			in.close();
-			out_cg.close();
-			out_ch.close();
+			out.close();
 			
 			//Print results
 			cout << "Total reads: " << stats_reads << endl;
