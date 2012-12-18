@@ -20,6 +20,7 @@ all:
 	g++ -O3 -o ./bin/trim ./headers/main/trim.cpp
 	g++ -O3 -o ./bin/trim_no_ch_drop ./headers/main/trim_no_ch_drop.cpp	
 	g++ -O3 -o ./bin/hammer ./headers/main/hammer.cpp
+	g++ -O3 -o ./bin/hammer_manual_conv ./headers/main/hammer_manual_conv.cpp
 	g++ -O3 -o ./bin/benjamini ./headers/main/benjamini.cpp
 	g++ -O3 -o ./bin/mc ./headers/main/mc.cpp
 	g++ -O3 -o ./bin/methstat ./headers/main/methstat.cpp
@@ -31,9 +32,10 @@ old:
 	#g++ -O3 -lpthread -o ./bin/readslam ./headers/main/cli.cpp
 	
 test:
-	g++ -O3 -o ./bin/benjamini ./headers/main/benjamini.cpp
-	g++ -O3 -o ./bin/bw_encode ./headers/main/bw_encode.cpp
+	#g++ -O3 -o ./bin/benjamini ./headers/main/benjamini.cpp
+	#g++ -O3 -o ./bin/bw_encode ./headers/main/bw_encode.cpp
 	#g++ -O3 -o ./bin/bw_decode ./headers/main/bw_decode.cpp
+	g++ -O3 -o ./bin/huffman ./headers/main/huffman.cpp
 
 coder:
 	g++ -O3 -o ./bin/encoder ./headers/algorithms/encode.cpp
@@ -68,5 +70,3 @@ done:
 hmc:
 	g++ -O3 -o ./bin/preprocess_adapter_trim_only ./headers/main/preprocess_adapter_trim_only.cpp
 	g++ -O3 -o ./bin/hmcip_resolve ./headers/main/hmcip_resolve.cpp
-	
-	
