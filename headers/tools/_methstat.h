@@ -41,6 +41,9 @@ namespace ReadSlam
 				<< tab << c
 				<< tab << h
 			<< end;
+			
+			//FIXME this should have the same return meaning as the load function does
+			return true; 
 		}
 	};
 	struct MethStat
@@ -166,9 +169,16 @@ namespace ReadSlam
 				{
 					if (dna[i] != 'C') continue;
 				}
-				if (i + up < 0) continue;
-				if (i + dn < 0) continue;
 
+				//This generates a warning on unsigned int i. Alternate version below
+				//if (i + up < 0) continue;
+				//if (i + dn < 0) continue;
+
+				//Prevent underflow
+				if (up < 0 && -up > i) continue;
+				if (dn < 0 && -dn > i) continue;
+
+				//Prevent overflow
 				if (i + up >= len) break;
 				if (i + dn >= len) break;
 				
@@ -224,9 +234,15 @@ namespace ReadSlam
 			{
 				if (dna[i] != 'c') continue;
 
-				if (i + up < 0) continue;
-				if (i + dn < 0) continue;
+				//This generates a warning on unsigned int i. Alternate version below
+				//if (i + up < 0) continue;
+				//if (i + dn < 0) continue;
 
+				//Prevent underflow
+				if (up < 0 && -up > i) continue;
+				if (dn < 0 && -dn > i) continue;
+
+				//Prevent overflow
 				if (i + up >= len) break;
 				if (i + dn >= len) break;
 				
@@ -270,9 +286,15 @@ namespace ReadSlam
 			
 			while (in >> i)
 			{
-				if (i + up < 0) continue;
-				if (i + dn < 0) continue;
+				//This generates a warning on unsigned int i. Alternate version below
+				//if (i + up < 0) continue;
+				//if (i + dn < 0) continue;
 
+				//Prevent underflow
+				if (up < 0 && -up > i) continue;
+				if (dn < 0 && -dn > i) continue;
+
+				//Prevent overflow
 				if (i + up >= len) break;
 				if (i + dn >= len) break;
 				
