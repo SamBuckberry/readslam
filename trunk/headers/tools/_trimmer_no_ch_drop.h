@@ -69,7 +69,8 @@ namespace ReadSlam
 			}
 		}
 		
-		void trim(string infile, string outfile)
+		//Recommended limits: error <= 3, size >= 20
+		void trim(string infile, string outfile, int limit_error, int limit_size)		
 		{
 			ifstream in (infile.c_str());
 			ofstream out (outfile.c_str());
@@ -116,7 +117,7 @@ namespace ReadSlam
 				}
 				
 				//Trim a read with errors
-				if (error > 3)
+				if (error > limit_error)
 				{
 					read.sequence = read.sequence.substr(0,i);
 
@@ -128,7 +129,7 @@ namespace ReadSlam
 				}
 				
 				//Save the read if it is good enough
-				if (read.sequence.size() > 20)
+				if (read.sequence.size() >= limit_size)
 				{
 					read.save(out);
 				}

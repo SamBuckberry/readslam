@@ -69,7 +69,8 @@ namespace ReadSlam
 			}
 		}
 		
-		void trim(string infile, string outfile)
+		//Recommended limits: noncg <= 3, mismatch <= 3, size >= 20
+		void trim(string infile, string outfile, int limit_noncg, int limit_error, int limit_size)
 		{
 			ifstream in (infile.c_str());
 			ofstream out (outfile.c_str());
@@ -114,12 +115,12 @@ namespace ReadSlam
 					else if (ref[i] == read.sequence[i]) continue;
 					else    error++;
 					
-					if (error > 3) break;
-					if (noncg > 3) break;
+					if (error > limit_error) break;
+					if (noncg > limit_noncg) break;
 				}
 				
 				//Trim a read with errors
-				if (error > 3)
+				if (error > limit_error)
 				{
 					// cout << '\n' << "Trimmed" << '\n';
 					// cout << read.qualities << '\n';
@@ -137,7 +138,7 @@ namespace ReadSlam
 				}
 				
 				//Save the read if it is good enough
-				if (noncg < 4 && read.sequence.size() > 20)
+				if (noncg <= limit_noncg && read.sequence.size() >= limit_size)
 				{
 					read.save(out);
 				}
@@ -145,6 +146,7 @@ namespace ReadSlam
 				{
 					dropped++;
 				}
+				
 				// else
 				// {
 				// 	cout << '\n' << "Dropped" << '\n';
