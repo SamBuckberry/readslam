@@ -17,13 +17,19 @@ namespace ReadSlam
 		//Load the next read from an open file stream
 		bool load(ifstream& in)
 		{
-
+			return false;
 		}
 		
 		//Save the read to an open file stream
 		void save(ofstream& out)
 		{
 
+		}
+		
+		//Validate current content
+		bool validate()
+		{
+			return false;
 		}
 		
 		//Convert to a ReadSlam read
