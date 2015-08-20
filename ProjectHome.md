@@ -1,0 +1,1 @@
+ReadSlam is a collection of C++ tools that work together to provide a data-handling pipeline for genomic deep-sequencing projects.
